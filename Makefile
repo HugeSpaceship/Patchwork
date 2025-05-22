@@ -11,7 +11,7 @@ CRT_TAIL                += $(shell ppu-lv2-gcc -print-file-name'='crtend.o)
 CRT_HEAD                += $(shell ppu-lv2-gcc -print-file-name'='ecrtn.o)
 
 PRX_LDFLAGS_EXTRA	= -L ./lib -Wl,--strip-unused-data
-PPU_SRCS 	= sha256.c memory.c prx.c
+PPU_SRCS 	= sha256.c memory.c config.c prx.c
 PPU_PRX_TARGET 	= test_lbp2.prx
 PPU_PRX_LDFLAGS += $(PRX_LDFLAGS_EXTRA)
 PPU_INCDIRS	+= -I$(CELL_TARGET_PATH)/ppu/include/sysutil
@@ -23,7 +23,7 @@ PPU_LIBS	+= $(CELL_TARGET_PATH)/ppu/lib/fno-exceptions/fno-rtti/libc.a
 PPU_LIBS	+= $(CELL_TARGET_PATH)/ppu/lib/hash/libsha256.a
 
 
-PPU_PRX_LDLIBS 	+= -lio_stub -lfs_stub -lsysutil_stub -lsysmodule_stub
+PPU_PRX_LDLIBS 	+= -lio_stub -lfs_stub -lsysutil_stub -lsysmodule_stub -lrtc_stub
 
 stub:
 
