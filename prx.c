@@ -12,24 +12,29 @@
 #include <cell/fs/cell_fs_file_api.h>
 #include <sys/fs_external.h>
 
-#include "config.h"
 #include "offsets.h"
 #include "memory.h"
 
-SYS_MODULE_INFO(PatchWorkLBP, 0, 1, 0);
+#define STR1(x)  #x
+#define STR(x)  STR1(x)
+
+#define PATCHWORK_VERSION_MAJOR 1
+#define PATCHWORK_VERSION_MINOR 0
+
+SYS_MODULE_INFO(PatchWorkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
 
 const char* url = NULL;
 const char* digest = NULL;
-const char* user_agent = "PatchworkLBP2 1.0\0";
-const char* lobby_password = NULL;
+const char* user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+char* lobby_password = NULL;
 
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 #define ERROR_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_DIALOG_TYPE_ERROR | CELL_MSGDIALOG_TYPE_SE_MUTE_OFF | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL);
 
-#define CONFIG_PATH "/dev_hdd0/tmp/patchwork.conf"
+#define CONFIG_PATH "/dev_hdd0/tmp/patchwork_lobby_password.txt"
 
 int start(void);
 int start(void)
@@ -41,12 +46,14 @@ int start(void)
     CellFsErrno err = cellFsOpen(CONFIG_PATH, CELL_FS_O_RDONLY, &fp, 0, 0);
     if (err != CELL_FS_SUCCEEDED) {
         ERROR_DIALOG("Failed to load " CONFIG_PATH);
+        goto fail;
     }
 
     CellFsStat stat;
     err = cellFsFstat(fp, &stat);
     if (err != CELL_FS_SUCCEEDED) {
         ERROR_DIALOG("Failed to stat " CONFIG_PATH);
+        goto fail;
     }
 
     char* buf = __builtin_alloca(stat.st_size);
@@ -57,39 +64,17 @@ int start(void)
     if (err != CELL_FS_SUCCEEDED) {
         ERROR_DIALOG("Failed to read " CONFIG_PATH);
     }
+    lobby_password = buf;
 
     ERROR_DIALOG(buf);
 
-    url = getValue("url", buf);
-    lobby_password = getValue("lobby_password", buf);
+    //url = getValue("url", buf);
+    //lobby_password = getValue("lobby_password", buf);
+
+    fail:
+        cellFsClose(fp);
 
     // ERROR_DIALOG("Test Error");
-
-
-    // ini_t* cfg = ini_load(CONFIG_PATH);
-    // if (!cfg) {
-    //
-    // } else {
-    //     url = ini_get(cfg, "server", "url");
-    //     if (!url) {
-    //         ERROR_DIALOG("Invalid or missing server url in " CONFIG_PATH);
-    //     }
-    //     // url = malloc(MIN(strlen(tmp_url), LBP_PS3_URL_LENGTH) + 1);
-    //     // memcpy((void *)url, tmp_url, strlen(tmp_url));
-    //     // free((void *)tmp_url);
-    //     // memset((void*)(url+strlen(tmp_url)), 0, 1);
-    //
-    //
-    //     // const char* tmp_digest = ini_get(cfg, "server", "digest");
-    //     // if (tmp_digest) {
-    //     //     digest = malloc(MIN(strlen(tmp_digest), LBP_DIGEST_LENGTH) + 1);
-    //     //     memcpy((void *)url, tmp_digest, strlen(tmp_digest));
-    //     //     free((void *)tmp_digest);
-    //     //     memset((void*)(url+strlen(tmp_digest)), 0, 1); // Set the last byte to null, just in case
-    //     // }
-    // }
-
-
 
     const sys_pid_t processPid = sys_process_getpid();
 
@@ -102,12 +87,11 @@ int start(void)
     // Write user-agent
     WriteProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
 
+    unsigned char * xxtea_key = __builtin_alloca(32);
     if (lobby_password) {
-        unsigned char * xxtea_key = __builtin_alloca(32);
         cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
         WriteProcessMemory(processPid, (void*)LBP2_NETWORK_KEY_OFFSET, xxtea_key, 16);
     } else {
-        unsigned char * xxtea_key = __builtin_alloca(32);
         CellRtcTick tick;
         cellRtcGetCurrentTick(&tick);
         cellSha256Digest(&tick.tick, sizeof(uint64_t), xxtea_key);
