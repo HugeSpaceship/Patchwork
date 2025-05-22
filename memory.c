@@ -11,13 +11,13 @@
 
 int sys_dbg_write_process_memory(sys_pid_t pid, const void* destination, const void* source, size_t size)
 {
-    system_call_4(905, pid, (uint64_t)destination, size, (uint64_t)source);
+    system_call_4(905, pid, (uintptr_t)destination, size, (uintptr_t)source);
     return_to_user_prog(int);
 }
 
 __attribute__((noinline)) int PS3MAPISetMemory(sys_pid_t pid, const void* destination, const void* source, size_t size)
 {
-    system_call_6(SC_COBRA_SYSCALL8, SYSCALL8_OPCODE_PS3MAPI, PS3MAPI_OPCODE_SET_PROC_MEM, pid, (uint64_t)destination, (uint64_t)source, size);
+    system_call_6(SC_COBRA_SYSCALL8, SYSCALL8_OPCODE_PS3MAPI, PS3MAPI_OPCODE_SET_PROC_MEM, pid, (uintptr_t)destination, (uintptr_t)source, size);
     return_to_user_prog(int);
 }
 

@@ -5,6 +5,7 @@
 #include <sys/process.h>
 #include <sysutil/sysutil_msgdialog.h>
 #include <cell/hash/libsha256.h>
+// ReSharper disable once CppUnusedIncludeDirective
 #include <cell/rtc/error.h> // must be included here because rtcsvc doesn't include it (for some reason)
 #include <cell/rtc/rtcsvc.h>
 
@@ -16,7 +17,7 @@
 #include "memory.h"
 
 SYS_MODULE_INFO(PatchWorkLBP, 0, 1, 0);
-SYS_MODULE_START(_start);
+SYS_MODULE_START(start);
 
 const char* url = NULL;
 const char* digest = NULL;
@@ -30,8 +31,8 @@ const char* lobby_password = NULL;
 
 #define CONFIG_PATH "/dev_hdd0/tmp/patchwork.conf"
 
-int _start(void);
-int _start(void)
+int start(void);
+int start(void)
 {
     sys_ppu_thread_yield(); // Yield to hopefully let IO finish loading important crap
 
