@@ -18,7 +18,7 @@
 SYS_MODULE_INFO(PatchWorkLBP, 0, 1, 0);
 SYS_MODULE_START(_start);
 
-const char* url = "http://hugespaceship.io/api/LBP_XML\0";
+const char* url = NULL;
 const char* digest = NULL;
 const char* user_agent = "PatchworkLBP2 1.0\0";
 const char* lobby_password = NULL;
@@ -93,8 +93,10 @@ int _start(void)
     const sys_pid_t processPid = sys_process_getpid();
 
     // Write game server URL
-    WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
-    WriteProcessMemory(processPid, (void*)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
+    if (url) {
+        WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
+        WriteProcessMemory(processPid, (void*)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
+    }
 
     // Write user-agent
     WriteProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
