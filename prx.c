@@ -90,9 +90,6 @@ int start(void)
         game = 3;
     }
 
-
-
-
     // Write game server URL
     // if (url) {
     //     WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
