@@ -26,7 +26,6 @@ SYS_MODULE_START(start);
 
 const char* url = NULL;
 const char* digest = NULL;
-const char* user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
 char* lobby_password = NULL;
 
 
@@ -63,46 +62,82 @@ int start(void)
     err = cellFsRead(fp, buf, stat.st_size, &n);
     if (err != CELL_FS_SUCCEEDED) {
         ERROR_DIALOG("Failed to read " CONFIG_PATH);
+        goto fail;
     }
     lobby_password = buf;
-
-    ERROR_DIALOG(buf);
-
-    //url = getValue("url", buf);
-    //lobby_password = getValue("lobby_password", buf);
 
     fail:
         cellFsClose(fp);
 
-    // ERROR_DIALOG("Test Error");
-
     const sys_pid_t processPid = sys_process_getpid();
+    uint8_t game = 0;
 
-    // Write game server URL
-    if (url) {
-        WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
-        WriteProcessMemory(processPid, (void*)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
+
+    char * ua = __builtin_alloca(20);
+
+    ReadProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, ua, 20);
+    if (ua[16] == '$') {
+        game = 1;
     }
 
-    // Write user-agent
-    WriteProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+    ReadProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, ua, 20);
+    if (ua[18] == '2') {
+        game = 2;
+    }
+
+    ReadProcessMemory(processPid, (void*)LBP3_NAME_OFFSET, ua, 20);
+    if (ua[19] == '3') {
+        game = 3;
+    }
+
+
+
+
+    // Write game server URL
+    // if (url) {
+    //     WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
+    //     WriteProcessMemory(processPid, (void*)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
+    // }
+
 
     unsigned char * xxtea_key = __builtin_alloca(32);
+    // Hash the lobby password so we get an unrecoverable string of a fixed length
     if (lobby_password) {
         cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
-        WriteProcessMemory(processPid, (void*)LBP2_NETWORK_KEY_OFFSET, xxtea_key, 16);
     } else {
         CellRtcTick tick;
         cellRtcGetCurrentTick(&tick);
         cellSha256Digest(&tick.tick, sizeof(uint64_t), xxtea_key);
-        WriteProcessMemory(processPid, (void*)LBP2_NETWORK_KEY_OFFSET, xxtea_key, 16);
     }
+    const char* user_agent;
+    switch (game) {
+        case 1:
+            user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+            WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+            WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            break;
+        case 2:
+            user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+            WriteProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+            WriteProcessMemory(processPid, (void*)LBP2_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            break;
+        case 3:
+            user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+            WriteProcessMemory(processPid, (void*)LBP3_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+            WriteProcessMemory(processPid, (void*)LBP3_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            break;
+        default:
+            ERROR_DIALOG("Failed to detect game, your online is not safe!");
+            break;
+    }
+
+
 
 
     // Write digest if applicable
-    if (digest) {
-        WriteProcessMemory(processPid, (void*)LBP2_DIGEST_OFFSET, digest, strlen(digest)+1);
-    }
+    // if (digest) {
+    //     WriteProcessMemory(processPid, (void*)LBP2_DIGEST_OFFSET, digest, strlen(digest)+1);
+    // }
 
 
     return SYS_PRX_NO_RESIDENT;

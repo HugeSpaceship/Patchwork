@@ -11,8 +11,8 @@ CRT_TAIL                += $(shell ppu-lv2-gcc -print-file-name'='crtend.o)
 CRT_HEAD                += $(shell ppu-lv2-gcc -print-file-name'='ecrtn.o)
 
 PRX_LDFLAGS_EXTRA	= -L ./lib -Wl,--strip-unused-data
-PPU_SRCS 	= sha256.c memory.c config.c prx.c
-PPU_PRX_TARGET 	= test_lbp2.prx
+PPU_SRCS 	= memory.c config.c prx.c
+PPU_PRX_TARGET 	= patchwork.prx
 PPU_PRX_LDFLAGS += $(PRX_LDFLAGS_EXTRA)
 PPU_INCDIRS	+= -I$(CELL_TARGET_PATH)/ppu/include/sysutil
 CLEANFILES 	= $(PRX_DIR)/$(PPU_SPRX_TARGET)
