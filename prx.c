@@ -73,20 +73,14 @@ void WriteFile(const char* path, void* buf, const uint64_t size) {
 }
 
 
-
-int start(void);
-int start(void)
-{
-    sys_ppu_thread_yield(); // Yield to hopefully let IO finish loading important crap
-
+void patch_thread(uint64_t arg) {
     const sys_pid_t processPid = sys_process_getpid();
     uint8_t game = 0;
-
 
     char * ua = __builtin_alloca(20);
 
     ReadProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, ua, 20);
-    if (ua[16] == '$') {
+    if (ua[15] == '$') {
         game = 1;
     }
 
@@ -100,12 +94,26 @@ int start(void)
         game = 3;
     }
 
+    while (1) {
+        sys_ppu_thread_yield();
+        const sys_prx_id_t id = sys_prx_get_module_id_by_name("sys_fs_Library", 0, 0);
+        if (id > CELL_OK) {
+            sys_ppu_thread_yield();
+            sys_ppu_thread_yield();
+            sys_ppu_thread_yield();
+            sys_ppu_thread_yield();
+            sys_ppu_thread_yield();
+            break;
+        }
+    }
+
     lobby_password = __builtin_alloca(16);
     const int read_password = ReadFile(LOBBY_PASSWORD_PATH, lobby_password, 16);
     url = __builtin_alloca(70);
     const int read_url = ReadFile(GAME_URL_PATH, url, 70);
     digest = __builtin_alloca(LBP_DIGEST_LENGTH);
     const int read_digest = ReadFile(DIGEST_PATH, digest, LBP_DIGEST_LENGTH);
+
 
     int password_randomized = 0;
     int patched = 1;
@@ -181,6 +189,19 @@ int start(void)
     if (patched == 1) {
         WriteFile("/dev_hdd0/tmp/wm_request", msgBuf, strlen(msgBuf));
     }
+
+    sys_ppu_thread_exit(0);
+}
+
+
+sys_ppu_thread_t threadID = 0;
+
+int start(void);
+int start(void)
+{
+    sys_ppu_thread_yield(); // Yield to hopefully let IO finish loading important crap
+
+    sys_ppu_thread_create(&threadID, patch_thread, 0, 3071, 4096, SYS_PPU_THREAD_CREATE_JOINABLE, "Patchwork-thread");
 
     return SYS_PRX_NO_RESIDENT;
 }
