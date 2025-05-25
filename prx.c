@@ -10,8 +10,7 @@
 #include <cell/rtc/error.h> // must be included here because rtcsvc doesn't include it (for some reason)
 #include <cell/rtc/rtcsvc.h>
 
-#include <cell/fs/cell_fs_file_api.h>
-#include <sys/fs_external.h>
+#include <cell/cell_fs.h>
 
 #include "offsets.h"
 #include "memory.h"
@@ -41,47 +40,28 @@ char* lobby_password = NULL;
 #define SUCCESS_MESSAGE_WITH_PW "/popup.ps3?Patchwork%20"STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBP2%0ALobby%20password%20has%20been%20set&icon=8&snd=5"
 #define SUCCESS_MESSAGE_WITHOUT_PW "/popup.ps3?Patchwork%20"STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBP2%0ALobby%20password%20has%20been%20randomized&icon=8&snd=5"
 
-char* ReadFile(const char* path) {
+int ReadFile(const char* path, char* buf, int buf_size) {
     int fp;
 
-    CellFsErrno err = cellFsOpen(path, CELL_FS_O_RDONLY, &fp, 0, 0);
+    CellFsErrno err = cellFsOpen(path, CELL_FS_O_RDONLY, &fp, NULL, 0);
     if (err != CELL_FS_SUCCEEDED) {
-        goto fail;
+        return 0;
     }
 
-    CellFsStat stat;
-    err = cellFsFstat(fp, &stat);
-    if (err != CELL_FS_SUCCEEDED) {
-        ERROR_DIALOG("Failed to stat file ");
-        goto fail;
-    }
-
-    if (stat.st_size == 0) {
-        ERROR_DIALOG("File is empty");
-        goto fail;
-    }
-
-    char* buf = __builtin_alloca(stat.st_size);
-
-    err = cellFsRead(fp, buf, stat.st_size, NULL);
+    err = cellFsRead(fp, buf, buf_size, NULL);
     if (err != CELL_FS_SUCCEEDED) {
         ERROR_DIALOG("Failed to read file");
-        goto fail;
+        return 0;
     }
-    goto done;
 
-    fail:
-        cellFsClose(fp);
-        return NULL;
-    done:
-        cellFsClose(fp);
-        return buf;
+    cellFsClose(fp);
+    return 1;
 }
 
 void WriteFile(const char* path, void* buf, const uint64_t size) {
     int fp;
 
-    CellFsErrno err = cellFsOpen(path, CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &fp, 0, 0);
+    CellFsErrno err = cellFsOpen(path, CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &fp, NULL, 0);
     if (err != CELL_FS_SUCCEEDED) {
         goto fail;
     }
@@ -116,19 +96,22 @@ int start(void)
     }
 
     ReadProcessMemory(processPid, (void*)LBP3_NAME_OFFSET, ua, 20);
-    if (ua[19] == '3') {
+    if (ua[18] == '3') {
         game = 3;
     }
 
-    lobby_password = ReadFile(LOBBY_PASSWORD_PATH);
-    url = ReadFile(GAME_URL_PATH);
-    digest = ReadFile(DIGEST_PATH);
+    lobby_password = __builtin_alloca(16);
+    const int read_password = ReadFile(LOBBY_PASSWORD_PATH, lobby_password, 16);
+    url = __builtin_alloca(70);
+    const int read_url = ReadFile(GAME_URL_PATH, url, 70);
+    digest = __builtin_alloca(LBP_DIGEST_LENGTH);
+    const int read_digest = ReadFile(DIGEST_PATH, digest, LBP_DIGEST_LENGTH);
 
     int password_randomized = 0;
     int patched = 1;
     unsigned char * xxtea_key = __builtin_alloca(32);
     // Hash the lobby password so we get an unrecoverable string of a fixed length
-    if (lobby_password) {
+    if (read_password) {
         cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
     } else {
         CellRtcTick tick;
@@ -151,6 +134,13 @@ int start(void)
             user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
             WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
             WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            if (read_digest) {
+                WriteProcessMemory(processPid, (void*)LBP1_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
+            }
+            if (read_url) {
+                WriteProcessMemory(processPid, (void*)LBP1_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP1_HTTPS_URL_OFFSET, url, strlen(url)+1);
+            }
             msgBuf[47] = '1';
 
             break;
@@ -158,12 +148,28 @@ int start(void)
             user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
             WriteProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
             WriteProcessMemory(processPid, (void*)LBP2_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            if (read_digest) {
+                WriteProcessMemory(processPid, (void*)LBP2_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
+            }
+            if (read_url) {
+                WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
+            }
             msgBuf[47] = '2';
             break;
         case 3:
             user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
             WriteProcessMemory(processPid, (void*)LBP3_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
             WriteProcessMemory(processPid, (void*)LBP3_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            if (read_url) {
+                WriteProcessMemory(processPid, (void*)LBP3_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP3_HTTPS_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP3_LIVE_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP3_PRESENCE_URL_OFFSET, url, strlen(url)+1);
+            }
+            if (read_digest) {
+                WriteProcessMemory(processPid, (void*)LBP3_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
+            }
             msgBuf[47] = '3';
             break;
         default:
