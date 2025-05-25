@@ -6,10 +6,7 @@
 #include <sysutil/sysutil_msgdialog.h>
 #include <cell/hash/libsha256.h>
 
-// ReSharper disable once CppUnusedIncludeDirective
-#include <cell/rtc/error.h> // must be included here because rtcsvc doesn't include it (for some reason)
-#include <cell/rtc/rtcsvc.h>
-
+#include <sys/sys_time.h>
 #include <cell/cell_fs.h>
 
 #include "offsets.h"
@@ -51,6 +48,7 @@ int ReadFile(const char* path, char* buf, int buf_size) {
     err = cellFsRead(fp, buf, buf_size, NULL);
     if (err != CELL_FS_SUCCEEDED) {
         ERROR_DIALOG("Failed to read file");
+        cellFsClose(fp);
         return 0;
     }
 
@@ -122,9 +120,11 @@ void patch_thread(uint64_t arg) {
     if (read_password) {
         cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
     } else {
-        CellRtcTick tick;
-        cellRtcGetCurrentTick(&tick);
-        cellSha256Digest(&tick.tick, sizeof(uint64_t), xxtea_key);
+        sys_time_sec_t sec = 0;
+        sys_time_nsec_t nsec = 0;
+        sys_time_get_current_time(&sec, &nsec);
+        uint64_t combined_time = nsec + sec;
+        cellSha256Digest(&combined_time, sizeof(uint64_t), xxtea_key);
         password_randomized = 1;
     }
 
