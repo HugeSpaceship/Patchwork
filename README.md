@@ -39,14 +39,14 @@ The CI pipeline should have an example of how to do this.
 ## Installation
 
 As mentioned at the top of this file, the easiest and most recommended way of installing Patchworks is via
-[Refresher](https://github.com/LittleBigRefresh/Refresher/releases/latest), the following instructions are intended for
+[Refresher](https://github.com/LittleBigRefresh/Refresher/releases/latest); the following instructions are intended for
 advanced users only.
 
 The game's EBOOT needs to be patched to allow it to load the SPRX, [SPRXPatcher](https://github.com/NotNite/SPRXPatcher)
 is a tool that seemingly enables this quite well.
 
 Once you've patched your EBOOT all you should need to do is put the SPRX file in the place you specified when running SPRXPatcher
-and optionally put a `patchworks_lobby_password` in `/dev_hdd0/tmp` if you want to play with friends.
+and optionally put a `patchwork_lobby_password.txt` in `/dev_hdd0/tmp` if you want to play with friends.
 If you don't specify a password file, the library will randomly generate a password on boot to ensure safety 
 (effectively disabling multiplayer).
 
