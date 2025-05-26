@@ -1,4 +1,4 @@
-CELL_SDK = C:/usr/local/cell
+CELL_SDK ?= C:/usr/local/cell
 CELL_MK_DIR ?= $(CELL_SDK)/samples/mk
 PRX_SAMPLES_DIR = ../..
 include $(CELL_MK_DIR)/sdk.makedef.mk
@@ -12,7 +12,7 @@ CRT_HEAD                += $(shell ppu-lv2-gcc -print-file-name'='ecrtn.o)
 
 SCETOOL = ./scetool.exe
 PRX_LDFLAGS_EXTRA	= -L ./lib -Wl,--strip-unused-data
-PPU_SRCS 	= memory.c config.c prx.c
+PPU_SRCS 	= memory.c prx.c
 PPU_PRX_TARGET 	= patchwork.prx
 PPU_PRX_LDFLAGS += $(PRX_LDFLAGS_EXTRA)
 PPU_INCDIRS	+= -I$(CELL_TARGET_PATH)/ppu/include/sysutil
