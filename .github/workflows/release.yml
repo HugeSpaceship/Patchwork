@@ -52,7 +52,6 @@ jobs:
       - name: Build prx
         run: |
           make
-          make sprx
         shell: pwsh
 
       - name: Update release tag
