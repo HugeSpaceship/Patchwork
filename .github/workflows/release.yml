@@ -71,6 +71,7 @@ jobs:
           body: "The absolute latest version, straight from the main branch, may contain bugs"
           generate_release_notes: true
           tag_name: latest
+          draft: "false"
           files: |
             ./patchwork.sprx
             ./patchwork.prx
