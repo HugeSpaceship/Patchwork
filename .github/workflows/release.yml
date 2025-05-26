@@ -43,6 +43,12 @@ jobs:
           choco install make
         shell: pwsh
 
+      - name: Build prx
+        run: |
+          make
+          make sprx
+        shell: pwsh
+
       - name: Latest Prerelease
         uses: softprops/action-gh-release@v2
         if: github.ref_type != 'tag'
