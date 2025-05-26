@@ -55,6 +55,14 @@ jobs:
           make sprx
         shell: pwsh
 
+      - name: Update release tag
+        if: github.ref_type != 'tag'
+        run: |
+          git tag -d latest
+          git push origin :refs/tags/latest
+          git tag latest
+          git push origin latest
+
       - name: Latest Prerelease
         uses: softprops/action-gh-release@v2
         if: github.ref_type != 'tag'
