@@ -51,6 +51,7 @@ jobs:
           name: "Latest Snapshot"
           body: "The absolute latest version, straight from the main branch, may contain bugs"
           generate_release_notes: true
+          tag_name: latest
           files: |
             ./patchwork.sprx
             ./patchwork.prx
