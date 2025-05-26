@@ -56,16 +56,13 @@ jobs:
           make
         shell: pwsh
 
-      - uses: dev-drprasad/delete-tag-and-release@v1.1
-        if: github.ref_type != 'tag'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: latest
-          delete_release: true
-
-      # Apparently this is why everything is drafts
-      - name: Wait a sec
-        run: sleep 5
+      - name: Del Previous Release
+        run: |
+          gh release delete "latest" --repo "${GITHUB_REPOSITORY}" --cleanup-tag  -y
+          sleep 5
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        continue-on-error: true
 
       - name: Latest Prerelease
         uses: softprops/action-gh-release@v2
