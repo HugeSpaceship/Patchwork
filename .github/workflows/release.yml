@@ -62,13 +62,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: latest
           delete_release: true
-      - name: Update release tag
-        if: github.ref_type != 'tag'
-        run: |
-          git tag -d latest
-          git push origin :refs/tags/latest
-          git tag latest
-          git push origin latest
 
       # Apparently this is why everything is drafts
       - name: Wait a sec
