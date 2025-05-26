@@ -50,3 +50,16 @@ and optionally put a `patchworks_lobby_password` in `/dev_hdd0/tmp` if you want 
 If you don't specify a password file, the library will randomly generate a password on boot to ensure safety 
 (effectively disabling multiplayer).
 
+## Credits
+
+[jvyden](https://github.com/jvyden) For helping me get set up with the SDK, providing emotional support, and testing.
+
+[jackcaver](https://github.com/jackcaver) For helping to test HEN, and for figuring out a race condition with SPRX loading.
+
+[ennuo](https://github.com/ennuo) For knowing what libraries don't work in SPRXs.
+
+[aldostools](https://github.com/aldostools) For making notifications relatively easy to display,
+and for having a workable example of reading/writing process memory using various syscalls.
+
+
+Media Molecule, for making games worth patching.
