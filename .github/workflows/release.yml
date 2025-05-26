@@ -20,6 +20,8 @@ jobs:
         run: |
           $workspacePath = "${{ github.workspace }}" -replace '\\', '/'
           echo "CELL_SDK=$workspacePath/PS3_SDK/cell" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "SCETOOL=$workspacePath/PS3_SDK/cell/Tools/scetool.2.9.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+
         shell: pwsh
 
 

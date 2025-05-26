@@ -8,7 +8,6 @@ CRT_HEAD                += $(shell ppu-lv2-gcc -print-file-name'='crtbegin.o)
 CRT_TAIL                += $(shell ppu-lv2-gcc -print-file-name'='crtend.o)
 CRT_HEAD                += $(shell ppu-lv2-gcc -print-file-name'='ecrtn.o)
 
-SCETOOL = ./scetool.exe
 PRX_LDFLAGS_EXTRA	= -L ./lib -Wl,--strip-unused-data
 PPU_SRCS 	= memory.c prx.c
 PPU_PRX_TARGET 	= patchwork.prx
