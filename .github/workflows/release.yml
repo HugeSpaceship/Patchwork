@@ -62,6 +62,10 @@ jobs:
           git tag latest
           git push origin latest
 
+      # Apparently this is why everything is drafts
+      - name: Wait a sec
+        run: sleep 2
+
       - name: Latest Prerelease
         uses: softprops/action-gh-release@v2
         if: github.ref_type != 'tag'
@@ -71,7 +75,6 @@ jobs:
           body: "The absolute latest version, straight from the main branch, may contain bugs"
           generate_release_notes: true
           tag_name: latest
-          draft: "false"
           files: |
             ./patchwork.sprx
             ./patchwork.prx
