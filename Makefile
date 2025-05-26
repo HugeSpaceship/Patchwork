@@ -1,8 +1,6 @@
 CELL_SDK ?= C:/usr/local/cell
-CELL_MK_DIR ?= $(CELL_SDK)/samples/mk
-PRX_SAMPLES_DIR = ../..
+CELL_MK_DIR ?= ./mk
 include $(CELL_MK_DIR)/sdk.makedef.mk
-#include $(PRX_SAMPLES_DIR)/mk/prx.mk
 
 PEXPORTPICKUP		= ppu-lv2-prx-exportpickup
 CRT_HEAD                += $(shell ppu-lv2-gcc -print-file-name'='ecrti.o)
