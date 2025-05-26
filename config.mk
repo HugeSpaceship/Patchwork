@@ -6,6 +6,6 @@ PPU_PREFIX = ppu-lv2-
 CC = $(PPU_DIR)/$(PPU_PREFIX)gcc
 LD = $(PPU_DIR)/$(PPU_PREFIX)gcc
 
-SCETOOL = ./scetool.exe
+SCETOOL ?= ./scetool.exe
 
 CFLAGS = -std=c99 -Wall

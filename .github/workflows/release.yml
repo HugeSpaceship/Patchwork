@@ -30,9 +30,9 @@ jobs:
         id: check_ps3_sdk
         run: |
           if [[ -d "${{ env.CELL_SDK }}" ]]; then
-            echo "::set-output name=sdk_exists::true"
+            echo "sdk_exists=true" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=sdk_exists::false"
+            echo "sdk_exists=false" >> $GITHUB_OUTPUT
           fi
         shell: bash
 
