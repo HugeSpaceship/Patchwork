@@ -1,4 +1,4 @@
-# Patchworks
+# Patchwork
 
 > TLDR: if you're looking to play LBP online, *safely*.
 > Check out the latest version of [Refresher](https://github.com/LittleBigRefresh/Refresher/releases/latest),
@@ -11,7 +11,8 @@ to fix some of the many security vulnerabilities the games have.
 
 Currently, the only fix is changing the XXTea encryption key used for network packets,
 this fixes the force-join exploit by making it impossible to join/be joined by a player
-without having the same lobby password.
+without having the same lobby password. Additionally it allows you to patch
+the game's URL, and digest key.
 
 ## Future Fixes
 
@@ -32,7 +33,8 @@ You also need make working on your machine, this was a bit of a challenge to set
 
 Once you've got everything set up though it should just be as easy as running Make in the project directory, which should build an SPRX.
 
-> TODO: Potentially add documentation about additional signing requirements for HEN
+By default it will just create a fake-signed SPRX file, though there is a makefile target to sign with SCEtool. 
+The CI pipeline should have an example of how to do this.  
 
 ## Installation
 
