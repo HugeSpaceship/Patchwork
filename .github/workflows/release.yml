@@ -56,6 +56,12 @@ jobs:
           make
         shell: pwsh
 
+      - uses: dev-drprasad/delete-tag-and-release@v1.1
+        if: github.ref_type != 'tag'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: latest
+          delete_release: true
       - name: Update release tag
         if: github.ref_type != 'tag'
         run: |
