@@ -1,0 +1,10 @@
+# make output
+objs/
+patchwork.prx
+patchwork.sprx
+patchwork.sym
+
+# SCETool
+scetool.exe
+scetool
+data/
