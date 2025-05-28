@@ -7,6 +7,7 @@
 #include <cell/hash/libsha256.h>
 
 #include <sys/sys_time.h>
+#include <sys/timer.h>
 #include <cell/cell_fs.h>
 
 #include "offsets.h"
@@ -78,6 +79,7 @@ void WriteFile(const char* path, void* buf, const uint64_t size) {
 
 
 void patch_thread(uint64_t arg) {
+
     const sys_pid_t processPid = sys_process_getpid();
     uint8_t game = 0;
 
@@ -86,30 +88,21 @@ void patch_thread(uint64_t arg) {
     ReadProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, ua, 20);
     if (ua[15] == '$') {
         game = 1;
+        sys_timer_sleep(1); // LBP1 loads the sys_fs library quite late
+        goto foundGame;
     }
 
     ReadProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, ua, 20);
     if (ua[18] == '2') {
         game = 2;
+        goto foundGame;
     }
 
     ReadProcessMemory(processPid, (void*)LBP3_NAME_OFFSET, ua, 20);
     if (ua[18] == '3') {
         game = 3;
     }
-
-    while (1) {
-        sys_ppu_thread_yield();
-        const sys_prx_id_t id = sys_prx_get_module_id_by_name("sys_fs_Library", 0, 0);
-        if (id > CELL_OK) {
-            sys_ppu_thread_yield();
-            sys_ppu_thread_yield();
-            sys_ppu_thread_yield();
-            sys_ppu_thread_yield();
-            sys_ppu_thread_yield();
-            break;
-        }
-    }
+    foundGame:
 
     lobby_password = __builtin_alloca(16);
 	setmem(lobby_password, 0, 16);
