@@ -56,6 +56,12 @@ int ReadFile(const char* path, char* buf, int buf_size) {
     return 1;
 }
 
+void setmem(void* buf, int value, int size) {
+	for (int i = 0; i < size; i++) {
+		buf[i] = value;
+	}
+}
+
 void WriteFile(const char* path, void* buf, const uint64_t size) {
     int fp;
 
@@ -106,10 +112,13 @@ void patch_thread(uint64_t arg) {
     }
 
     lobby_password = __builtin_alloca(16);
+	setmem(lobby_password, 0, 16);
     const int read_password = ReadFile(LOBBY_PASSWORD_PATH, lobby_password, 16);
     url = __builtin_alloca(70);
+	setmem(url, 0, 70);
     const int read_url = ReadFile(GAME_URL_PATH, url, 70);
     digest = __builtin_alloca(LBP_DIGEST_LENGTH);
+	setmem(digest, 0, LBP_DIGEST_LENGTH);
     const int read_digest = ReadFile(DIGEST_PATH, digest, LBP_DIGEST_LENGTH);
 
 
