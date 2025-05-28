@@ -56,7 +56,7 @@ int ReadFile(const char* path, char* buf, int buf_size) {
     return 1;
 }
 
-void setmem(void* buf, int value, int size) {
+void setmem(char* buf, int value, int size) {
 	for (int i = 0; i < size; i++) {
 		buf[i] = value;
 	}
