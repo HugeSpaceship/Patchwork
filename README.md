@@ -4,7 +4,7 @@
 > Check out the latest version of [Refresher](https://github.com/LittleBigRefresh/Refresher/releases/latest),
 > Bonsai's official patcher.
 
-Patchworks is an SPRX module that patches the LittleBigPlanet series of games
+Patchwork is an SPRX module that patches the LittleBigPlanet series of games
 to fix some of the many security vulnerabilities the games have.
 
 ## Current Fixes
@@ -28,26 +28,35 @@ The ideal patches for something like this are as follows:
 
 ## Building
 
-Patchworks needs the PS3 SDK to build; I use 4.75, though I doubt that it's the only version that would work.
-You also need make working on your machine, this was a bit of a challenge to set up for me as I am using Windows on ARM.
+Patchwork has a couple of dependencies:
 
-Once you've got everything set up though it should just be as easy as running Make in the project directory, which should build an SPRX.
+- The official PS3 SDK. Version 4.75 is recommended, but others can probably be used.
+- A working version of `make`. This can generally be any build of `make`, but in the case of Windows, MSYS2 MINGW64's `make` is known to work.
+- `scetool` is required for signing, if desired
 
-By default it will just create a fake-signed SPRX file, though there is a makefile target to sign with SCEtool. 
-The CI pipeline should have an example of how to do this.  
+Once you've got everything set up, it should just be as easy as running `make` in the project directory, which should build an SPRX.
+
+The CI pipeline should be a clearer example of how to do this.
 
 ## Installation
 
-As mentioned at the top of this file, the easiest and most recommended way of installing Patchworks is via
-[Refresher](https://github.com/LittleBigRefresh/Refresher/releases/latest); the following instructions are intended for
-advanced users only.
+As mentioned previously, the easiest and most recommended way of installing or configuring Patchwork is via
+[Refresher](https://github.com/LittleBigRefresh/Refresher/releases/latest).
+The following instructions are intended for advanced users only.
 
-The game's EBOOT needs to be patched to allow it to load the SPRX, [SPRXPatcher](https://github.com/NotNite/SPRXPatcher)
-is a tool that seemingly enables this quite well.
+Note that Refresher can still be used to install Patchwork with your own build. Just put your `patchwork.sprx` file next to the Refresher executable
+and Refresher should say 'Found custom patchwork.sprx next to exe, uploading that instead` when (re)patching.
 
-Once you've patched your EBOOT all you should need to do is put the SPRX file in the place you specified when running SPRXPatcher
-and optionally put a `patchwork_lobby_password.txt` in `/dev_hdd0/tmp` if you want to play with friends.
-If you don't specify a password file, the library will randomly generate a password on boot to ensure safety 
+The game's EBOOT needs to be patched to allow it to load the SPRX.
+[SPRXPatcher](https://github.com/NotNite/SPRXPatcher) is a tool that enables this quite well.
+
+Once you've patched your EBOOT, all you need to do is put the SPRX file in the same place you specified when running SPRXPatcher.
+Generally, this location should be `/dev_hdd0/plugins/patchwork.sprx` but you can put it elsewhere if desired.
+
+Optionally, put a `patchwork_lobby_password.txt` in `/dev_hdd0/tmp` if you'd like to play with friends.
+You can also use `patchwork_url.txt` and `patchwork_digest.txt` to patch to a custom server of your choice.
+
+If you don't specify a password file, the library will randomly generate a random password on boot to ensure safety 
 (effectively disabling multiplayer).
 
 ## Credits
