@@ -36,7 +36,7 @@ clean:
 	rm -rf $(OBJS_DIR) $(PRX_TARGET) $(SYM_TARGET) $(SPRX_TARGET)
 
 install: $(SPRX_TARGET)
-	pwsh.exe .\scripts\install.ps1 -PS3IP $(PS3_IP)
+	pwsh .\scripts\install.ps1 -PS3IP $(PS3_IP)
 
 run: install
 	pwsh .\scripts\run.ps1 -PS3IP $(PS3_IP)
