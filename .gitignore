@@ -2,6 +2,7 @@
 objs/
 patchwork.prx
 patchwork.sprx
+patchwork-rpcs3.sprx
 patchwork.sym
 
 # SCETool
