@@ -12,6 +12,7 @@
 
 #include "offsets.h"
 #include "memory.h"
+#include "util.h"
 
 #define STR1(x)  #x
 #define STR(x)  STR1(x)
@@ -102,6 +103,7 @@ void patch_thread(uint64_t arg) {
     if (ua[18] == '3') {
         game = 3;
     }
+
     foundGame:
 
     lobby_password = __builtin_alloca(16);
@@ -114,12 +116,12 @@ void patch_thread(uint64_t arg) {
 	setmem(digest, 0, LBP_DIGEST_LENGTH);
     const int read_digest = ReadFile(DIGEST_PATH, digest, LBP_DIGEST_LENGTH);
 
-
     int password_randomized = 0;
     int patched = 1;
     unsigned char * xxtea_key = __builtin_alloca(32);
     // Hash the lobby password so we get an unrecoverable string of a fixed length
     if (read_password) {
+		lobby_password = trimEnd(lobby_password);
         cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
     } else {
         sys_time_sec_t sec = 0;
@@ -129,6 +131,15 @@ void patch_thread(uint64_t arg) {
         cellSha256Digest(&combined_time, sizeof(uint64_t), xxtea_key);
         password_randomized = 1;
     }
+	
+	// Trim strings so users editing text files by hand don't cause issues
+	if(read_digest) {
+		digest = trimEnd(digest);
+	}
+	
+	if(read_url) {
+		url = trimEnd(url);
+	}
 
     char* msgBuf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
 
