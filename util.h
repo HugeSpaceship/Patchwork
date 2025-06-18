@@ -6,6 +6,9 @@
 #include <string.h>
 
 char* trimEnd(char* str) {
+    if (str == NULL) return NULL;
+    if (*str == '\0') return str;
+
     char* end = str + strlen(str) - 1;
     while (end > str && isspace((unsigned char)*end)) end--;
 
@@ -15,4 +18,4 @@ char* trimEnd(char* str) {
     return str;
 }
 
-#endif // UTIL_C
+#endif // UTIL_H
