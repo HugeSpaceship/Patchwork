@@ -1,5 +1,6 @@
 CELL_SDK ?= C:/usr/local/cell
 CELL_TARGET_PATH = $(CELL_SDK)/target
+HOST_DIR = $(CELL_SDK)/host-win32/bin
 PPU_DIR = $(CELL_SDK)/host-win32/ppu/bin
 PPU_PREFIX = ppu-lv2-
 
@@ -7,6 +8,7 @@ CC = $(PPU_DIR)/$(PPU_PREFIX)gcc
 LD = $(PPU_DIR)/$(PPU_PREFIX)gcc
 
 SCETOOL ?= ./scetool.exe
+MAKE_FSELF ?= $(HOST_DIR)/make_fself.exe
 
 CFLAGS = -std=c99 -Wall
 
