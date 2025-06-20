@@ -32,9 +32,9 @@ char* lobby_password = NULL;
 
 #define ERROR_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_DIALOG_TYPE_ERROR | CELL_MSGDIALOG_TYPE_SE_MUTE_OFF | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL);
 
-#define LOBBY_PASSWORD_PATH "/dev_hdd0/tmp/patchwork_lobby_password.txt"
-#define GAME_URL_PATH "/dev_hdd0/tmp/patchwork_url.txt"
-#define DIGEST_PATH "/dev_hdd0/tmp/patchwork_digest.txt"
+#define LOBBY_PASSWORD_PATH "/dev_hdd0/plugins/patchwork/patchwork_lobby_password.txt"
+#define GAME_URL_PATH "/dev_hdd0/plugins/patchwork/patchwork_url.txt"
+#define DIGEST_PATH "/dev_hdd0/plugins/patchwork/patchwork_digest.txt"
 
 #define SUCCESS_MESSAGE_WITH_PW "/popup.ps3?Patchwork%20"STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBP2%0ALobby%20password%20has%20been%20set&icon=8&snd=5"
 #define SUCCESS_MESSAGE_WITHOUT_PW "/popup.ps3?Patchwork%20"STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBP2%0ALobby%20password%20has%20been%20randomized&icon=8&snd=5"
