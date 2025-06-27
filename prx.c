@@ -84,11 +84,27 @@ void patch_thread(uint64_t arg) {
     const sys_pid_t processPid = sys_process_getpid();
     uint8_t game = 0;
 
+    int password_randomized = 1;
+    unsigned char * xxtea_key = __builtin_alloca(32);
+    sys_time_sec_t sec = 0;
+    sys_time_nsec_t nsec = 0;
+    sys_time_get_current_time(&sec, &nsec);
+    uint64_t combined_time = nsec + sec;
+    cellSha256Digest(&combined_time, sizeof(uint64_t), xxtea_key);
+
     char * ua = __builtin_alloca(20);
+    const char* user_agent;
 
     ReadProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, ua, 20);
     if (ua[15] == '$') {
         game = 1;
+        
+        // we need to patch the user agent *before* waiting for sys_fs
+        // to prevent a race condition which makes the game still send the unpatched user agent
+        WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
+        user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+
         sys_timer_sleep(1); // LBP1 loads the sys_fs library quite late
         goto foundGame;
     }
@@ -116,20 +132,12 @@ void patch_thread(uint64_t arg) {
 	setmem(digest, 0, LBP_DIGEST_LENGTH);
     const int read_digest = ReadFile(DIGEST_PATH, digest, LBP_DIGEST_LENGTH);
 
-    int password_randomized = 0;
     int patched = 1;
-    unsigned char * xxtea_key = __builtin_alloca(32);
     // Hash the lobby password so we get an unrecoverable string of a fixed length
     if (read_password) {
 		lobby_password = trimEnd(lobby_password);
         cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
-    } else {
-        sys_time_sec_t sec = 0;
-        sys_time_nsec_t nsec = 0;
-        sys_time_get_current_time(&sec, &nsec);
-        uint64_t combined_time = nsec + sec;
-        cellSha256Digest(&combined_time, sizeof(uint64_t), xxtea_key);
-        password_randomized = 1;
+        password_randomized = 0;
     }
 	
 	// Trim strings so users editing text files by hand don't cause issues
@@ -149,12 +157,11 @@ void patch_thread(uint64_t arg) {
         strcpy(msgBuf, SUCCESS_MESSAGE_WITHOUT_PW);
     }
 
-    const char* user_agent;
     switch (game) {
         case 1:
-            user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
-            WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
-            WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            if (password_randomized == 0) {
+                WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            }
             if (read_digest) {
                 WriteProcessMemory(processPid, (void*)LBP1_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
