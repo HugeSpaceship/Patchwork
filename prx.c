@@ -169,8 +169,12 @@ void patch_thread(uint64_t arg) {
                 WriteProcessMemory(processPid, (void*)LBP1_HTTP_URL_OFFSET, url, strlen(url)+1);
                 WriteProcessMemory(processPid, (void*)LBP1_HTTPS_URL_OFFSET, url, strlen(url)+1);
             }
-            msgBuf[47] = '1';
 
+            // Enable client-side check for LBP1 playlists
+            const char* playlist_check_override = "1";
+            WriteProcessMemory(processPid, (void*)LBP1_PLAYLIST_OFFSET, playlist_check_override, 1);
+
+            msgBuf[47] = '1';
             break;
         case 2:
             user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
