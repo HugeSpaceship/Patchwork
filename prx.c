@@ -118,6 +118,12 @@ void patch_thread(uint64_t arg) {
     ReadProcessMemory(processPid, (void*)LBP3_NAME_OFFSET, ua, 20);
     if (ua[18] == '3') {
         game = 3;
+        goto foundGame;
+    }
+
+    ReadProcessMemory(processPid, (void*)LBP3_JP_NAME_OFFSET, ua, 20);
+    if (ua[18] == '3') {
+        game = 4;
     }
 
     foundGame:
@@ -201,6 +207,21 @@ void patch_thread(uint64_t arg) {
             }
             if (read_digest) {
                 WriteProcessMemory(processPid, (void*)LBP3_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
+            }
+            msgBuf[47] = '3';
+            break;
+        case 4:
+            user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+            WriteProcessMemory(processPid, (void*)LBP3_JP_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+            WriteProcessMemory(processPid, (void*)LBP3_JP_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            if (read_url) {
+                WriteProcessMemory(processPid, (void*)LBP3_JP_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP3_JP_HTTPS_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP3_JP_LIVE_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP3_JP_PRESENCE_URL_OFFSET, url, strlen(url)+1);
+            }
+            if (read_digest) {
+                WriteProcessMemory(processPid, (void*)LBP3_JP_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
             msgBuf[47] = '3';
             break;
