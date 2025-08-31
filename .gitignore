@@ -9,3 +9,6 @@ patchwork.sym
 scetool.exe
 scetool
 data/
+
+# Misc
+tests/

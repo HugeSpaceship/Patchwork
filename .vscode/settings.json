@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "sysutil_msgdialog.h": "c",
+        "timer.h": "c",
+        "sys_time.h": "c",
+        "libsha256.h": "c",
+        "stdlib.h": "c",
+        "cell_fs.h": "c",
+        "process.h": "c",
+        "memory.h": "c",
+        "util.h": "c",
+        "message.h": "c",
+        "stdarg.h": "c",
+        "string.h": "c",
+        "fs.h": "c",
+        "ppu_thread.h": "c",
+        "toml.h": "c"
+    }
+}

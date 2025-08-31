@@ -1,7 +1,7 @@
 param([string]$PS3IP)
 
 $File = ".\patchwork.sprx"
-$ftp = "ftp://$PS3IP/dev_hdd0/tmp/patchwork.sprx"
+$ftp = "ftp://$PS3IP/dev_hdd0/plugins/patchwork.sprx"
 
 "ftp url: $ftp"
 
