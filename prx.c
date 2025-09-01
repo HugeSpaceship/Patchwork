@@ -3,24 +3,23 @@
 #include <sys/prx.h>
 #include <sys/ppu_thread.h> // sys_ppu_thread_yield
 #include <sys/process.h>
-#include <cell/hash/libsha256.h>
-
 #include <sys/sys_time.h>
 #include <sys/timer.h>
+#include <cell/hash/libsha256.h>
 
-#include "offsets.h"
-#include "sys/memory.h"
-#include "sys/fs.h"
-#include "util.h"
-#include "message.h"
+#include "core/memory.h"
+#include "core/fs.h"
 #include "printf/printf.h"
+#include "toml/toml.h"
+#include "helpers/util.h"
+#include "helpers/message.h"
+#include "offsets.h"
 
 #define STR1(x)  #x
 #define STR(x)  STR1(x)
 
 SYS_MODULE_INFO(PatchWorkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
-
 
 char lobby_password[16] = "";
 char url[70] = "";
@@ -85,10 +84,11 @@ void patch_thread(uint64_t arg) {
 
     char line[128] = "";
     char section[32] = "";
+    int badParse = 0; // Display an error message if this becomes true
     size_t offset = 0;
     while (ReadLine(buffer, 196, line, 128, &offset)) {
         TomlEntry entry;
-        if (ParseAsTomlEntry(line, section, &entry)) {
+        if (ParseAsTomlEntry(line, section, &entry, &badParse)) {
             if (strcmp(entry.section, "Patchwork") == 1) {
                 continue;
             }
@@ -102,6 +102,15 @@ void patch_thread(uint64_t arg) {
                 strcpy(digest, entry.value.str_val);
             }
         }
+    }
+
+    // Since we cant display an error while an error is already being displayed, this one should take precendence
+    // Any errors we catch could be combined into a single large error to be displayed at the end, but I cant be arsed
+    if (badParse == 1) {
+        ERROR_DIALOG(WARNING_CONFIG_PARSE_FAIL);
+    }
+    if (url[0] == '\0') {
+        ERROR_DIALOG(WARNING_CONFIG_MISSING_URL);
     }
 
     int patched = 1;
@@ -171,13 +180,13 @@ void patch_thread(uint64_t arg) {
             user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
             WriteProcessMemory(processPid, (void*)LBP3_JP_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
             WriteProcessMemory(processPid, (void*)LBP3_JP_NETWORK_KEY_OFFSET, xxtea_key, 16);
-            if (read_url) {
+            if (url[0] != '\0') {
                 WriteProcessMemory(processPid, (void*)LBP3_JP_HTTP_URL_OFFSET, url, strlen(url)+1);
                 WriteProcessMemory(processPid, (void*)LBP3_JP_HTTPS_URL_OFFSET, url, strlen(url)+1);
                 WriteProcessMemory(processPid, (void*)LBP3_JP_LIVE_URL_OFFSET, url, strlen(url)+1);
                 WriteProcessMemory(processPid, (void*)LBP3_JP_PRESENCE_URL_OFFSET, url, strlen(url)+1);
             }
-            if (read_digest) {
+            if (digest[0] != '\0') {
                 WriteProcessMemory(processPid, (void*)LBP3_JP_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
             msgBuf[47] = '3';

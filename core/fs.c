@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <cell/cell_fs.h>
 
-#include "../message.h"
-#include "memory.h"
-#include "fs.h"
+#include "helpers/message.h"
+#include "core/memory.h"
+#include "core/fs.h"
 
 int StatFile(const char *path, CellFsStat *sb) {
     CellFsErrno err = cellFsStat(path, sb);

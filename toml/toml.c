@@ -3,20 +3,23 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "toml.h"
-#include "../util.h"
+#include "toml/toml.h"
+#include "helpers/util.h"
 
-int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry) {
+int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry, int *error) {
     const char *p = line;
 
     while (isspace(*p)) p++;
     if (*p == '#' || *p == '\0') return 0; // Skip comments
 
-    // Parse section
+    // Parse section header
     if (*p == '[') {
         p++;
         char *end = strchr(p, ']');
-        if (!end) return 0;
+        if (!end) {
+            *error = 1; // No ending bracket
+            return 0;
+        }
         size_t len = end - p;
         strncpy(section, p, len);
         section[len] = '\0';
@@ -26,12 +29,14 @@ int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry) {
     // Parse key-value pair
     char *eq = strchr(p, '=');
     if (!eq) {
+        *error = 1; // No key-value separator (equal sign)
         return 0;
     }
     
     size_t key_len = eq - p;
     size_t val_len = strlen(eq + 1);
 
+    // alloca to use Trim() properly
     char *key = __builtin_alloca(key_len + 1);
     char *val = __builtin_alloca(val_len + 1);
 
@@ -51,6 +56,7 @@ int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry) {
         char *start = val + 1; // Skip quote
         char *end = strchr(start, '"'); // Find end quote
         if (!end) {
+            *error = 1; // No end quote
             return 0;
         }
         *end = '\0'; // Replace end quote with null terminator

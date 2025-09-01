@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <cell/cell_fs.h>
 
 int StatFile(const char *path, CellFsStat *sb);

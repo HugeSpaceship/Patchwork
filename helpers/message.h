@@ -14,6 +14,7 @@
 #define SUCCESS_MESSAGE_WITH_PW "Patchwork "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)" Loaded for LBPX\nLobby password has been set"
 #define SUCCESS_MESSAGE_WITHOUT_PW "Patchwork "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)" Loaded for LBPX\nLobby password has been randomized"
 
-void WMPopup(char *message, int icon, int snd);
+#define WARNING_CONFIG_PARSE_FAIL "Some entries found in the Patchwork configuration file could not properly be read"
+#define WARNING_CONFIG_MISSING_URL "The server URL could not be found in the Patchwork configuration file"
 
-void PrintTTY(const char *msg);
+void WMPopup(char *message, int icon, int snd);

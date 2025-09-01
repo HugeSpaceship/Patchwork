@@ -1,3 +1,7 @@
+# IDE junk
+.vscode
+.idea
+
 # make output
 objs/
 patchwork.prx
@@ -9,6 +13,3 @@ patchwork.sym
 scetool.exe
 scetool
 data/
-
-# Misc
-tests/

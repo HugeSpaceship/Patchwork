@@ -14,7 +14,7 @@ LD = $(PPU_DIR)/$(PPU_PREFIX)gcc
 SCETOOL ?= ./scetool.exe
 MAKE_FSELF ?= $(HOST_DIR)/make_fself.exe
 
-CFLAGS += -std=c99 -Wall
+CFLAGS += -std=c99 -Wall -I.
 
 # Put your PS3's local IP here to use the install/run targets on the Makefile
 PS3_IP ?= 192.168.137.62

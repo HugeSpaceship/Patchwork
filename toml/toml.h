@@ -17,4 +17,4 @@ typedef struct {
     } value;
 } TomlEntry;
 
-int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry);
+int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry, int *error);
