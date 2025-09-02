@@ -9,7 +9,6 @@
 
 #include "core/memory.h"
 #include "core/fs.h"
-#include "printf/printf.h"
 #include "toml/toml.h"
 #include "helpers/util.h"
 #include "helpers/message.h"
@@ -49,7 +48,7 @@ void patch_thread(uint64_t arg) {
     if (ua[15] == '$') {
         game = 1;
         
-        // we need to patch the user agent *before *waiting for sys_fs
+        // we need to patch the user agent *before* waiting for sys_fs
         // to prevent a race condition which makes the game still send the unpatched user agent
         WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
         user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
@@ -109,18 +108,18 @@ void patch_thread(uint64_t arg) {
     if (badParse == 1) {
         ERROR_DIALOG(WARNING_CONFIG_PARSE_FAIL);
     }
-    if (url[0] == '\0') {
+    if (!url[0]) {
         ERROR_DIALOG(WARNING_CONFIG_MISSING_URL);
     }
 
     int patched = 1;
     // Hash the lobby password so we get an unrecoverable string of a fixed length
-    if (lobby_password[0] != '\0') {
+    if (lobby_password[0]) {
         cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
         password_randomized = 0;
     }
 
-    char *msgBuf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
+    char msgBuf[sizeof(SUCCESS_MESSAGE_WITHOUT_PW)];
 
     if (password_randomized == 0) {
         strcpy(msgBuf, SUCCESS_MESSAGE_WITH_PW);
@@ -132,14 +131,14 @@ void patch_thread(uint64_t arg) {
     switch (game) {
         case 1:
             if (password_randomized == 0) {
-                WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
+                WriteProcessMemory(processPid, (void *)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
             }
-            if (digest[0] != '\0') {
-                WriteProcessMemory(processPid, (void*)LBP1_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
+            if (digest[0]) {
+                WriteProcessMemory(processPid, (void *)LBP1_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
-            if (url[0] != '\0') {
-                WriteProcessMemory(processPid, (void*)LBP1_HTTP_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP1_HTTPS_URL_OFFSET, url, strlen(url)+1);
+            if (url[0]) {
+                WriteProcessMemory(processPid, (void *)LBP1_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void *)LBP1_HTTPS_URL_OFFSET, url, strlen(url)+1);
             }
 
             // Enable client-side check for LBP1 playlists
@@ -150,44 +149,44 @@ void patch_thread(uint64_t arg) {
             break;
         case 2:
             user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
-            WriteProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
-            WriteProcessMemory(processPid, (void*)LBP2_NETWORK_KEY_OFFSET, xxtea_key, 16);
-            if (digest[0] != '\0') {
-                WriteProcessMemory(processPid, (void*)LBP2_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
+            WriteProcessMemory(processPid, (void *)LBP2_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+            WriteProcessMemory(processPid, (void *)LBP2_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            if (digest[0]) {
+                WriteProcessMemory(processPid, (void *)LBP2_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
-            if (url[0] != '\0') {
-                WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
+            if (url[0]) {
+                WriteProcessMemory(processPid, (void *)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void *)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
             }
             msgBuf[28] = '2';
             break;
         case 3:
             user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
-            WriteProcessMemory(processPid, (void*)LBP3_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
-            WriteProcessMemory(processPid, (void*)LBP3_NETWORK_KEY_OFFSET, xxtea_key, 16);
-            if (url[0] != '\0') {
-                WriteProcessMemory(processPid, (void*)LBP3_HTTP_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_HTTPS_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_LIVE_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_PRESENCE_URL_OFFSET, url, strlen(url)+1);
+            WriteProcessMemory(processPid, (void *)LBP3_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+            WriteProcessMemory(processPid, (void *)LBP3_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            if (url[0]) {
+                WriteProcessMemory(processPid, (void *)LBP3_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void *)LBP3_HTTPS_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void *)LBP3_LIVE_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void *)LBP3_PRESENCE_URL_OFFSET, url, strlen(url)+1);
             }
-            if (digest[0] != '\0') {
-                WriteProcessMemory(processPid, (void*)LBP3_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
+            if (digest[0]) {
+                WriteProcessMemory(processPid, (void *)LBP3_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
             msgBuf[28] = '3';
             break;
         case 4:
             user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
-            WriteProcessMemory(processPid, (void*)LBP3_JP_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
-            WriteProcessMemory(processPid, (void*)LBP3_JP_NETWORK_KEY_OFFSET, xxtea_key, 16);
-            if (url[0] != '\0') {
-                WriteProcessMemory(processPid, (void*)LBP3_JP_HTTP_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_JP_HTTPS_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_JP_LIVE_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_JP_PRESENCE_URL_OFFSET, url, strlen(url)+1);
+            WriteProcessMemory(processPid, (void *)LBP3_JP_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+            WriteProcessMemory(processPid, (void *)LBP3_JP_NETWORK_KEY_OFFSET, xxtea_key, 16);
+            if (url[0]) {
+                WriteProcessMemory(processPid, (void *)LBP3_JP_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void *)LBP3_JP_HTTPS_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void *)LBP3_JP_LIVE_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void *)LBP3_JP_PRESENCE_URL_OFFSET, url, strlen(url)+1);
             }
-            if (digest[0] != '\0') {
-                WriteProcessMemory(processPid, (void*)LBP3_JP_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
+            if (digest[0]) {
+                WriteProcessMemory(processPid, (void *)LBP3_JP_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
             msgBuf[47] = '3';
             break;

@@ -8,6 +8,8 @@
 
 // WebMAN request string for creating a popup
 #define WM_POPUP_REQUEST "/popup.ps3?"
+#define WM_POPUP_CONFIG_ICON "&icon="
+#define WM_POPUP_CONFIG_SND "&snd="
 #define WM_POPUP_CONFIG_MAX_LEN 14 // Max valid length of icon and sound sections of popup request
 
 // Premade notification message dialogs

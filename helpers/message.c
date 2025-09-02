@@ -1,9 +1,9 @@
 #include <string.h>
 
 #include "helpers/message.h"
+#include "helpers/util.h"
 #include "core/fs.h"
 #include "core/memory.h"
-#include "printf/printf.h"
 
 // Could be abstracted into it's own "Replace all instances of x character in string with..." function, but eh
 void WMPopup(char *message, int icon, int snd) {
@@ -45,11 +45,21 @@ void WMPopup(char *message, int icon, int snd) {
         }
     }
 
-    char popupConfig[WM_POPUP_CONFIG_MAX_LEN] = "";
-    snprintf(popupConfig, WM_POPUP_CONFIG_MAX_LEN, "&icon=%d&snd=%d", icon, snd);
+    // Append icon and sound bits without snprintf()
+    char iconStr[2];
+    IntToStr(iconStr, icon, 1);
+    char sndStr[2];
+    IntToStr(sndStr, snd, 1);
 
-    memcpy(p, popupConfig, strlen(popupConfig));
-    p += strlen(popupConfig);
+    memcpy(p, WM_POPUP_CONFIG_ICON, strlen(WM_POPUP_CONFIG_ICON));
+    p += strlen(WM_POPUP_CONFIG_ICON);
+    memcpy(p, iconStr, 1);
+    p++;
+    memcpy(p, WM_POPUP_CONFIG_SND, strlen(WM_POPUP_CONFIG_SND));
+    p += strlen(WM_POPUP_CONFIG_SND);
+    memcpy(p, sndStr, 1);
+    p++;
+
     *p = '\0'; // Write null terminator just in case
 
     WriteFile(WM_REQUEST_PATH, fullPath, strlen(fullPath));
