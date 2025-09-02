@@ -91,24 +91,24 @@ void patch_thread(uint64_t arg) {
 
     char line[128] = "";
     char section[32] = "";
-    int badParse = 0; // Display an error message if this becomes true
+    int err = NULL;
     size_t offset = 0;
     while (ReadLine(buffer, 196, line, 128, &offset)) {
         TomlEntry entry;
-
-        if (ParseAsTomlEntry(line, section, &entry) != TOML_FAIL) {
-            if (strcmp(entry.section, "Patchwork") == 0) {
-                ApplyEntryToKeyMap(keyMap, &entry, count);
-            }
+        
+        err = ParseAsTomlEntry(line, section, &entry) != TOML_FAIL;
+        if (err != TOML_FAIL) {
+            continue;
         }
-        else {
-            badParse = 1; // We failed to parse something, tell the user later
+
+        if (strcmp(entry.section, "Patchwork") == 0) {
+            ApplyEntryToKeyMap(keyMap, &entry, count);
         }
     }
 
     // Since we cant display an error while an error is already being displayed, this one should take precendence
     // Any errors we catch could be combined into a single large error to be displayed at the end, but I cant be arsed
-    if (badParse == 1) {
+    if (err == TOML_FAIL) {
         ERROR_DIALOG(WARNING_CONFIG_PARSE_FAIL);
     }
     if (!url[0]) {
