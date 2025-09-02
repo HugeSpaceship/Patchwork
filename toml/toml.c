@@ -6,31 +6,32 @@
 #include "toml/toml.h"
 #include "helpers/util.h"
 
-int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry, int *error) {
+// Parse a single line of TOML as a TomlEntry struct
+int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry) {
     const char *p = line;
 
     while (isspace(*p)) p++;
-    if (*p == '#' || *p == '\0') return 0; // Skip comments
+    if (*p == '#' || *p == '\0') {
+        return TOML_SKIPPED; // Skip comments
+    }
 
     // Parse section header
     if (*p == '[') {
         p++;
         char *end = strchr(p, ']');
         if (!end) {
-            *error = 1; // No ending bracket
-            return 0;
+            return TOML_FAIL;
         }
         size_t len = end - p;
         strncpy(section, p, len);
         section[len] = '\0';
-        return 0;
+        return TOML_SUCCESS;
     }
 
     // Parse key-value pair
     char *eq = strchr(p, '=');
     if (!eq) {
-        *error = 1; // No key-value separator (equal sign)
-        return 0;
+        return TOML_FAIL;
     }
     
     size_t key_len = eq - p;
@@ -56,21 +57,45 @@ int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry, int *err
         char *start = val + 1; // Skip quote
         char *end = strchr(start, '"'); // Find end quote
         if (!end) {
-            *error = 1; // No end quote
-            return 0;
+            return TOML_FAIL;
         }
         *end = '\0'; // Replace end quote with null terminator
         entry->type = TYPE_STRING;
-        strncpy(entry->value.str_val, start, sizeof(entry->value.str_val));
+        strncpy(entry->value.strVal, start, sizeof(entry->value.strVal));
     }
     else if (strcmp(val, "true") == 0 || strcmp(val, "false") == 0) {
         entry->type = TYPE_BOOL;
-        entry->value.bool_val = (strcmp(val, "true") == 0);
+        entry->value.boolVal = (strcmp(val, "true") == 0);
     }
     else {
         entry->type = TYPE_INT;
-        entry->value.int_val = StrToInt(val);
+        entry->value.intVal = StrToInt(val);
     }
 
-    return 1;
+    return TOML_SUCCESS;
+}
+
+// Parse all lines of TOML in buffer and try to populate values in a KeyMap
+void ApplyEntryToKeyMap(const KeyMap *map, const TomlEntry *entry, size_t mapSize) {
+    for (size_t i = 0; i < mapSize; i++) {
+        if (strcmp(entry->key, map[i].key) != 0) {
+            continue;
+        }
+
+        switch (map[i].type) {
+            case TYPE_STRING:
+                strncpy((char *)map[i].target, entry->value.strVal, map[i].maxLen);
+                break; // Could be terminated here, but ParseAsTomlEntry terminates all strings
+
+            case TYPE_BOOL:
+                *(int *)map[i].target = entry->value.boolVal;
+                break;
+
+            case TYPE_INT:
+                *(int *)map[i].target = entry->value.intVal;
+                break;
+        }
+
+        break;
+    }
 }

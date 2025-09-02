@@ -11,10 +11,24 @@ typedef struct {
     char key[64];
     ValueType type;
     union {
-        char str_val[128];
-        int int_val;
-        int bool_val;
+        char strVal[128];
+        int intVal;
+        int boolVal;
     } value;
 } TomlEntry;
 
-int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry, int *error);
+typedef struct {
+    const char *key;
+    void *target;
+    ValueType type;
+    size_t maxLen; // Only needed for strings
+} KeyMap;
+
+enum TomlParseErrno {
+    TOML_FAIL, // Wonderful error handling
+    TOML_SKIPPED,
+    TOML_SUCCESS
+};
+
+int ParseAsTomlEntry(const char *line, char *section, TomlEntry *entry);
+void ApplyEntryToKeyMap(const KeyMap *map, const TomlEntry *entry, size_t mapSize);

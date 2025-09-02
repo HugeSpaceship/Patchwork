@@ -20,7 +20,7 @@
 SYS_MODULE_INFO(PatchWorkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
 
-char lobby_password[16] = "";
+char lobbyPassword[16] = "";
 char url[70] = "";
 char digest[LBP_DIGEST_LENGTH] = "";
 
@@ -78,6 +78,14 @@ void patch_thread(uint64_t arg) {
     foundGame:
     ; // Blank statement after label to deal with compiler errors
 
+    // Store all our keys to read the TOML file for
+    KeyMap keyMap[] = {
+        {"LobbyPassword", lobbyPassword, TYPE_STRING, 16},
+        {"ServerURL",     url,           TYPE_STRING, 70},
+        {"ServerDigest",  digest,        TYPE_STRING, 18}
+    };
+    size_t count = sizeof(keyMap) / sizeof(KeyMap); // Returns the amount of entries in the array
+
     char buffer[196] = "";
     ReadFile(CONFIG_PATH, buffer, 196);
 
@@ -87,19 +95,14 @@ void patch_thread(uint64_t arg) {
     size_t offset = 0;
     while (ReadLine(buffer, 196, line, 128, &offset)) {
         TomlEntry entry;
-        if (ParseAsTomlEntry(line, section, &entry, &badParse)) {
-            if (strcmp(entry.section, "Patchwork") == 1) {
-                continue;
+
+        if (ParseAsTomlEntry(line, section, &entry) != TOML_FAIL) {
+            if (strcmp(entry.section, "Patchwork") == 0) {
+                ApplyEntryToKeyMap(keyMap, &entry, count);
             }
-            else if (strcmp(entry.key, "LobbyPassword") == 0) {
-                strcpy(lobby_password, entry.value.str_val);
-            }
-            else if (strcmp(entry.key, "ServerURL") == 0) {
-                strcpy(url, entry.value.str_val);
-            }
-            else if (strcmp(entry.key, "ServerDigest") == 0) {
-                strcpy(digest, entry.value.str_val);
-            }
+        }
+        else {
+            badParse = 1; // We failed to parse something, tell the user later
         }
     }
 
@@ -114,8 +117,8 @@ void patch_thread(uint64_t arg) {
 
     int patched = 1;
     // Hash the lobby password so we get an unrecoverable string of a fixed length
-    if (lobby_password[0]) {
-        cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
+    if (lobbyPassword[0]) {
+        cellSha256Digest(lobbyPassword, strlen(lobbyPassword), xxtea_key);
         password_randomized = 0;
     }
 
