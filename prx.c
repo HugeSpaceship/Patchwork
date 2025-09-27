@@ -11,6 +11,7 @@
 #include "core/fs.h"
 #include "toml/toml.h"
 #include "helpers/util.h"
+#include "helpers/string.h"
 #include "helpers/message.h"
 #include "offsets.h"
 
@@ -20,7 +21,7 @@
 SYS_MODULE_INFO(PatchWorkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
 
-char lobbyPassword[16] = "";
+char lobbyPassword[17] = ""; // Make password buffer 17 chars long to make room for null terminator
 char url[70] = "";
 char digest[LBP_DIGEST_LENGTH] = "";
 
@@ -96,8 +97,8 @@ void patch_thread(uint64_t arg) {
     while (ReadLine(buffer, 196, line, 128, &offset)) {
         TomlEntry entry;
         
-        err = ParseAsTomlEntry(line, section, &entry) != TOML_FAIL;
-        if (err != TOML_FAIL) {
+        err = ParseAsTomlEntry(line, section, &entry);
+        if (err == TOML_FAIL) {
             continue;
         }
 
@@ -106,12 +107,12 @@ void patch_thread(uint64_t arg) {
         }
     }
 
-    // Since we cant display an error while an error is already being displayed, this one should take precendence
+    // Since we cant display an error while an error is already being displayed, parsing fails should take precendence
     // Any errors we catch could be combined into a single large error to be displayed at the end, but I cant be arsed
     if (err == TOML_FAIL) {
         ERROR_DIALOG(WARNING_CONFIG_PARSE_FAIL);
     }
-    if (!url[0]) {
+    else if (!url[0]) {
         ERROR_DIALOG(WARNING_CONFIG_MISSING_URL);
     }
 
@@ -148,7 +149,8 @@ void patch_thread(uint64_t arg) {
             const char *playlist_check_override = "1";
             WriteProcessMemory(processPid, (void*)LBP1_PLAYLIST_OFFSET, playlist_check_override, 1);
 
-            msgBuf[28] = '1';
+            // We can get away with using the same buffer as input and output since we only write one char
+            ReplaceNextInstanceOfChar(msgBuf, msgBuf, sizeof(msgBuf), "1", 'X');
             break;
         case 2:
             user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
@@ -161,7 +163,7 @@ void patch_thread(uint64_t arg) {
                 WriteProcessMemory(processPid, (void *)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
                 WriteProcessMemory(processPid, (void *)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
             }
-            msgBuf[28] = '2';
+            ReplaceNextInstanceOfChar(msgBuf, msgBuf, sizeof(msgBuf), "2", 'X');
             break;
         case 3:
             user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
@@ -176,7 +178,7 @@ void patch_thread(uint64_t arg) {
             if (digest[0]) {
                 WriteProcessMemory(processPid, (void *)LBP3_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
-            msgBuf[28] = '3';
+            ReplaceNextInstanceOfChar(msgBuf, msgBuf, sizeof(msgBuf), "3", 'X');
             break;
         case 4:
             user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
@@ -191,7 +193,7 @@ void patch_thread(uint64_t arg) {
             if (digest[0]) {
                 WriteProcessMemory(processPid, (void *)LBP3_JP_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
-            msgBuf[47] = '3';
+            ReplaceNextInstanceOfChar(msgBuf, msgBuf, sizeof(msgBuf), "3", 'X');
             break;
         default:
             ERROR_DIALOG("Failed to detect game, your online is not safe!");

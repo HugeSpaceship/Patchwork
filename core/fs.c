@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <cell/cell_fs.h>
 
 #include "helpers/message.h"
@@ -39,7 +40,7 @@ int ReadLine(const char *input, size_t inputSize, char *buf, size_t bufSize, siz
         return 0;
     }
 
-    setmem(buf, 0, bufSize);
+    memset(buf, 0, bufSize);
 
     size_t i = 0;
     while (*offset < inputSize) {
@@ -68,7 +69,7 @@ int ReadLine(const char *input, size_t inputSize, char *buf, size_t bufSize, siz
     return 1;
 };
 
-void WriteFile(const char *path, void *buf, const uint64_t size) {
+void WriteFile(const char *path, void *buf, const size_t size) {
     int fd;
 
     CellFsErrno err = cellFsOpen(path, CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &fd, NULL, 0);

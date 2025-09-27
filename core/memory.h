@@ -11,8 +11,6 @@
 #define PS3MAPI_OPCODE_GET_PROC_MEM				   0x0031
 #include <sys/sys_types.h>
 
-void setmem(char *buf, int value, int size);
-
 int sys_dbg_write_process_memory(sys_pid_t pid, const void *destination, const void *source, size_t size);
 int sys_dbg_read_process_memory(sys_pid_t pid, void *destination, void *source, size_t size);
 

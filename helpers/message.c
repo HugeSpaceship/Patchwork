@@ -5,7 +5,7 @@
 #include "core/fs.h"
 #include "core/memory.h"
 
-// Could be abstracted into it's own "Replace all instances of x character in string with..." function, but eh
+// This function is a bit too specific to use ReplaceNextInstanceOfChar() very easily
 void WMPopup(char *message, int icon, int snd) {
     size_t oldLen = strlen(message);
     size_t newLen = oldLen;
@@ -20,7 +20,7 @@ void WMPopup(char *message, int icon, int snd) {
 
     char fullPath[strlen(WM_POPUP_REQUEST) + newLen + WM_POPUP_CONFIG_MAX_LEN];
 
-    setmem(fullPath, 0, sizeof(fullPath));
+    memset(fullPath, 0, sizeof(fullPath));
 
     strcpy(fullPath, WM_POPUP_REQUEST); // Copy popup command
 

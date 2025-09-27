@@ -17,4 +17,4 @@ MAKE_FSELF ?= $(HOST_DIR)/make_fself.exe
 CFLAGS += -std=c99 -Wall -I.
 
 # Put your PS3's local IP here to use the install/run targets on the Makefile
-PS3_IP ?= 192.168.1.32
+PS3_IP ?= 0.0.0.0

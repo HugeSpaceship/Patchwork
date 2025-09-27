@@ -1,7 +1,7 @@
 include ./config.mk
 
 C_SRCS += prx.c core/memory.c core/fs.c
-C_SRCS += helpers/message.c helpers/util.c
+C_SRCS += helpers/message.c helpers/util.c helpers/string.c
 C_SRCS += toml/toml.c
 PRX_TARGET = patchwork.prx
 

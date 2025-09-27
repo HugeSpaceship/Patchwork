@@ -9,12 +9,6 @@
 #include <sys/syscall.h>
 #include <sys/sys_types.h>
 
-void setmem(char *buf, int value, int size) {
-	for (int i = 0; i < size; i++) {
-		buf[i] = value;
-	}
-}
-
 int sys_dbg_write_process_memory(sys_pid_t pid, const void *destination, const void *source, size_t size)
 {
     system_call_4(905, pid, (uintptr_t)destination, size, (uintptr_t)source);
