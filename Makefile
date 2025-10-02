@@ -1,11 +1,13 @@
 include ./config.mk
 
-C_SRCS = prx.c memory.c
+C_SRCS += prx.c core/memory.c core/fs.c
+C_SRCS += helpers/message.c helpers/util.c helpers/string.c
+C_SRCS += toml/toml.c
 PRX_TARGET = patchwork.prx
 
-PPU_LIBS	= $(CELL_TARGET_PATH)/ppu/lib/fno-exceptions/fno-rtti/libc.a
-PPU_LIBS	+= $(CELL_TARGET_PATH)/ppu/lib/hash/libsha256.a
-PPU_PRX_LDFLAGS 	= -zgenprx -zgenstub -lio_stub -lfs_stub -lsysutil_stub -lsysmodule_stub -Wl,--strip-unused-data
+PPU_LIBS  = $(CELL_TARGET_PATH)/ppu/lib/fno-exceptions/fno-rtti/libc.a
+PPU_LIBS += $(CELL_TARGET_PATH)/ppu/lib/hash/libsha256.a
+PPU_PRX_LDFLAGS += -zgenprx -zgenstub -lio_stub -lfs_stub -lsysutil_stub -lsysmodule_stub -Wl,--strip-unused-data
 
 SPRX_TARGET = $(basename $(PRX_TARGET)).sprx
 RPCS3_SPRX_TARGET = $(basename $(PRX_TARGET))-rpcs3.sprx
@@ -38,6 +40,10 @@ $(RPCS3_SPRX_TARGET): $(PRX_TARGET)
 
 clean:
 	rm -rf $(OBJS_DIR) $(PRX_TARGET) $(SYM_TARGET) $(SPRX_TARGET) $(RPCS3_SPRX_TARGET)
+
+build: $(SPRX_TARGET)
+
+build-rpcs3: $(RPCS3_SPRX_TARGET)
 
 install: $(SPRX_TARGET)
 	pwsh .\scripts\install.ps1 -PS3IP $(PS3_IP)

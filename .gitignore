@@ -1,3 +1,7 @@
+# IDE junk
+.vscode
+.idea
+
 # make output
 objs/
 patchwork.prx
