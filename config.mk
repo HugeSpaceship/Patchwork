@@ -6,6 +6,7 @@ PPU_PREFIX = ppu-lv2-
 
 CC = $(PPU_DIR)/$(PPU_PREFIX)gcc
 LD = $(PPU_DIR)/$(PPU_PREFIX)gcc
+AS = $(PPU_DIR)/$(PPU_PREFIX)as
 
 SCETOOL ?= ./scetool.exe
 MAKE_FSELF ?= $(HOST_DIR)/make_fself.exe

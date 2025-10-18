@@ -5,6 +5,11 @@
 #ifndef PATCHWORK_HOOKS_H
 #define PATCHWORK_HOOKS_H
 
+#include <stdlib.h>
+
+extern void *RNPCSRHook;
+
+// opcode 12 branch, address of RNPCSRHook, absolute address, not linked
 
 
 #endif //PATCHWORK_HOOKS_H

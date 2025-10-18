@@ -13,6 +13,7 @@
 #include "offsets.h"
 #include "memory.h"
 #include "util.h"
+#include "hooks.h"
 
 #define STR1(x)  #x
 #define STR(x)  STR1(x)
@@ -104,6 +105,10 @@ void patch_thread(uint64_t arg) {
         WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
         user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
         WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+
+        uint32_t RNPBranchInstruction = 0x48000000 | (uint32_t)RNPCSRHook << 2 | 2;
+        // Patch Script Loading
+        WriteProcessMemory(processPid, (void*)LBP1_RNP_QUEUE_OFFSET, &RNPBranchInstruction, 4);
 
         sys_timer_sleep(1); // LBP1 loads the sys_fs library quite late
         goto foundGame;
