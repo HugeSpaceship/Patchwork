@@ -106,7 +106,7 @@ void patch_thread(uint64_t arg) {
         user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
         WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
 
-        // opcode 12 branch, address of RNPCSRHook, absolute address, not linked
+        // ba RNPCSRHook
         uint32_t RNPBranchInstruction = 0x48000000 | (uint32_t)RNPCSRHook << 2 | 2;
         // Patch Script Loading
         WriteProcessMemory(processPid, (void*)LBP1_RNP_QUEUE_OFFSET, &RNPBranchInstruction, 4);
