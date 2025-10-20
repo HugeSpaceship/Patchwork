@@ -9,7 +9,4 @@
 
 extern void *RNPCSRHook;
 
-// opcode 12 branch, address of RNPCSRHook, absolute address, not linked
-
-
 #endif //PATCHWORK_HOOKS_H
