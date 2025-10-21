@@ -18,8 +18,8 @@
 #define STR1(x)  #x
 #define STR(x)  STR1(x)
 
-#define PATCHWORK_VERSION_MAJOR 1
-#define PATCHWORK_VERSION_MINOR 2
+#define PATCHWORK_VERSION_MAJOR 2
+#define PATCHWORK_VERSION_MINOR 0
 
 SYS_MODULE_INFO(PatchWorkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
@@ -107,8 +107,8 @@ void patch_thread(uint64_t arg) {
         WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
 
         // ba RNPCSRHook
-        uint32_t RNPBranchInstruction = 0x48000000 | (uint32_t)RNPCSRHook << 2 | 2;
-        // Patch Script Loading
+        uint32_t RNPBranchInstruction = 0x48000000 + (((uint32_t)RNPCSRHook - (uint32_t)LBP1_RNP_QUEUE_OFFSET) & 0x3ffffff);
+        // Hook RNP resource loading
         WriteProcessMemory(processPid, (void*)LBP1_RNP_QUEUE_OFFSET, &RNPBranchInstruction, 4);
 
         sys_timer_sleep(1); // LBP1 loads the sys_fs library quite late
