@@ -8,7 +8,7 @@
 
 // Global
 #define LBP_PS3_PROD_URL_LENGTH 70
-#define LBP_DIGEST_LENGTH       18
+#define LBP_DIGEST_LENGTH       20
 #define LBP_NETWORK_KEY_SIZE    16
 
 // LBP1

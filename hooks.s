@@ -17,4 +17,4 @@ notscript:
     # set up registers for normal addToCSRQueue call
     clrldi r3, r25, 32 # Reset r3
     bla 0x7D1EC # AddToCSRQueue
-    ba 0x81BC0 # instruction after our hook branch
+    ba 0x81BCC # instruction after our hook branch
