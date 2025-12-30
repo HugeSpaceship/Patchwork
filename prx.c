@@ -65,7 +65,7 @@ void setmem(char* buf, int value, int size) {
 	}
 }
 
-void WriteFile(const char* path, void* buf, const uint64_t size) {
+void WriteFile(const char* path, const void* buf, const uint64_t size) {
     int fp;
 
     CellFsErrno err = cellFsOpen(path, CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &fp, NULL, 0);
@@ -106,8 +106,8 @@ void patch_thread(uint64_t arg) {
         user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"\0\0\0";
         WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, LBP_DIGEST_LENGTH);
 
-        // ba RNPCSRHook
-        uint32_t RNPBranchInstruction = 0x48000000 + (((uint32_t)&RNPCSRHook - (uint32_t)LBP1_RNP_QUEUE_OFFSET) & 0x3ffffff);
+        // b RNPCSRHook
+        const uint32_t RNPBranchInstruction = OPCODE_B + (((uint32_t)&RNPCSRHook - (uint32_t)LBP1_RNP_QUEUE_OFFSET) & 0x3ffffff);
         // Hook RNP resource loading
         WriteProcessMemory(processPid, (void*)LBP1_RNP_QUEUE_OFFSET, &RNPBranchInstruction, 4);
 
