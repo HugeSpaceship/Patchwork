@@ -13,6 +13,7 @@
 #include "offsets.h"
 #include "memory.h"
 #include "util.h"
+#include "hooks.h"
 
 #define STR1(x)  #x
 #define STR(x)  STR1(x)
@@ -64,7 +65,7 @@ void setmem(char* buf, int value, int size) {
 	}
 }
 
-void WriteFile(const char* path, void* buf, const uint64_t size) {
+void WriteFile(const char* path, const void* buf, const uint64_t size) {
     int fp;
 
     CellFsErrno err = cellFsOpen(path, CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &fp, NULL, 0);
@@ -98,12 +99,17 @@ void patch_thread(uint64_t arg) {
     ReadProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, ua, 20);
     if (ua[15] == '$') {
         game = 1;
-        
+
         // we need to patch the user agent *before* waiting for sys_fs
         // to prevent a race condition which makes the game still send the unpatched user agent
-        WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
-        user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
-        WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
+        WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, LBP_NETWORK_KEY_SIZE);
+        user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"\0\0\0";
+        WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, LBP_DIGEST_LENGTH);
+
+        // b RNPCSRHook
+        const uint32_t RNPBranchInstruction = OPCODE_B + (((uint32_t)&RNPCSRHook - (uint32_t)LBP1_RNP_QUEUE_OFFSET) & 0x3ffffff);
+        // Hook RNP resource loading
+        WriteProcessMemory(processPid, (void*)LBP1_RNP_QUEUE_OFFSET, &RNPBranchInstruction, 4);
 
         sys_timer_sleep(1); // LBP1 loads the sys_fs library quite late
         goto foundGame;

@@ -25,7 +25,8 @@ $(C_OBJS): $(OBJS_DIR)/%.ppu.o: %.c
 
 $(SYM_TARGET): $(C_OBJS_DEPENDS)
 	@mkdir -p $(dir $(@))
-	$(LD) -mprx $(C_OBJS) $(PPU_PRX_LDFLAGS) $(PPU_LIBS) -o $@
+	$(AS) "-mregnames" -o ./objs/hooks.o hooks.s
+	$(LD) -mprx $(C_OBJS) ./objs/hooks.o $(PPU_PRX_LDFLAGS) $(PPU_LIBS) -o $@
 
 $(PRX_TARGET): $(SYM_TARGET)
 	cp $(SYM_TARGET) $(PRX_TARGET)
