@@ -102,7 +102,7 @@ void patch_thread(uint64_t arg) {
 
         // we need to patch the user agent *before* waiting for sys_fs
         // to prevent a race condition which makes the game still send the unpatched user agent
-        WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
+        WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, LBP_NETWORK_KEY_SIZE);
         user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"\0\0\0";
         WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, LBP_DIGEST_LENGTH);
 
@@ -178,13 +178,13 @@ void patch_thread(uint64_t arg) {
                 WriteProcessMemory(processPid, (void*)LBP1_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
             if (read_url) {
-                WriteProcessMemory(processPid, (void*)LBP1_HTTP_URL_OFFSET, url, 32);
-                WriteProcessMemory(processPid, (void*)LBP1_HTTPS_URL_OFFSET, url, 32);
+                WriteProcessMemory(processPid, (void*)LBP1_HTTP_URL_OFFSET, url, strlen(url)+1);
+                WriteProcessMemory(processPid, (void*)LBP1_HTTPS_URL_OFFSET, url, strlen(url)+1);
             }
 
             // Enable client-side check for LBP1 playlists
-            // const char* playlist_check_override = "1";
-            // WriteProcessMemory(processPid, (void*)LBP1_PLAYLIST_OFFSET, playlist_check_override, 1);
+            const char* playlist_check_override = "1";
+            WriteProcessMemory(processPid, (void*)LBP1_PLAYLIST_OFFSET, playlist_check_override, 1);
 
             msgBuf[47] = '1';
             break;
