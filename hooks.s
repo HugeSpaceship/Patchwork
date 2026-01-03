@@ -26,7 +26,7 @@ LBP2ScriptHook:
     lbz r0, 36(r0) # 36 bytes in is the resource type
     cmpwi cr7, r0, 0x1 # if the resource is a script
     beq cr7, dontload # don't load it
-    ba 0x143D78 # continue to original function
+    ba 0x153D78 # continue to original function
 
 dontload:
     ba 0x153D3C # Return 0 in resource check function
