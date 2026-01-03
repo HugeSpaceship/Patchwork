@@ -118,6 +118,13 @@ void patch_thread(uint64_t arg) {
     ReadProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, ua, 20);
     if (ua[18] == '2') {
         game = 2;
+
+        // b RNPCSRHook
+        const uint32_t ResourceCheckBranchInstruction = OPCODE_B + (((uint32_t)&LBP2ScriptHook - (uint32_t)LBP2_RESOURCE_CHECK_OFFSET) & 0x3ffffff);
+        // Hook RNP resource loading
+        WriteProcessMemory(processPid, (void*)LBP2_RESOURCE_CHECK_OFFSET, &ResourceCheckBranchInstruction, 4);
+
+
         goto foundGame;
     }
 

@@ -16,3 +16,16 @@ notscript:
     clrldi r3, r25, 32 # Reset r3
     bla 0x7D1EC # AddToCSRQueue
     ba 0x81BCC # instruction after our hook branch
+
+.global LBP2ScriptHook
+LBP2ScriptHook:
+    beq cr7, dontload # relocated branch from original function, uses a label here but is mostly equivalent
+
+    # we shouldn't need to care about r0, as anything that uses it sets it immediately
+    lbz r0, 35(r29) # 35 bytes in is the resource type
+    cmpwi cr7, r0, 0xB # if the resource is a script
+    beq cr7, dontload # don't load it
+    ba 0x153D78 # continue to original function
+
+dontload:
+    ba 0x153D3C # Return 0 in resource check function

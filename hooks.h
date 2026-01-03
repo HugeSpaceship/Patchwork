@@ -5,6 +5,8 @@
 
 extern void *RNPCSRHook;
 
+extern void *LBP2ScriptHook;
+
 // Opcode for the branch instruction
 #define OPCODE_B 0x48000000
 
