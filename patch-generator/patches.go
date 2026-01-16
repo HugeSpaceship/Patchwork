@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -29,6 +30,9 @@ type PatchFile struct {
 func (e PatchEntry) MarshalYAML() ([]byte, error) {
 	if e.Address == 0 {
 		return []byte(fmt.Sprintf("[%s, 0x0, %s]", e.Type, e.Value)), nil
+	}
+	if _, err := strconv.ParseFloat(e.Value, 64); err != nil {
+		return []byte(fmt.Sprintf("[%s, %#08x, %s]", e.Type, e.Address, strconv.Quote(e.Value))), nil
 	}
 	return []byte(fmt.Sprintf("[%s, %#08x, %s]", e.Type, e.Address, e.Value)), nil
 }

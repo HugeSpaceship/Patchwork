@@ -94,6 +94,12 @@ func main() {
 			}
 		}
 
+		patchEntries = append(patchEntries, PatchEntry{
+			Type:    "c_utf8",
+			Address: game.Offsets.UserAgent,
+			Value:   game.UserAgent,
+		})
+
 		titleIDVersionMap := make(map[string][]string)
 		for _, d := range game.TitleIDs {
 			titleIDVersionMap[d] = game.GameVersions
