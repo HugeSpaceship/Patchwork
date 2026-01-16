@@ -58,7 +58,7 @@ jobs:
 
       - name: Generate patch file
         run: |
-          go get .
+          go get ./patch-generator
           go run ./patch-generator -input ./patchwork.prx -config ./lbpdefs -output ./patchwork-rpcs3-patch.yml
 
       - name: Del Previous Release

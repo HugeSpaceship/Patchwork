@@ -1,4 +1,4 @@
-module HookCombobulator
+module github.com/HugeSpaceship/Patchwork
 
 go 1.25
 
