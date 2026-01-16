@@ -1,0 +1,11 @@
+symbol_name: LBP2ScriptHook
+offsets:
+  user_agent: 0x00C36320
+  resource_check: 0x00153D74
+user_agent: PatchworkLBP2 2.0
+name: LittleBigPlanet 2
+versions:
+  - "01.33"
+title_ids:
+  - BCES01086
+ppu_hash: PPU-a74423ca913fc18e46cfe926db1d48e41f9858a9

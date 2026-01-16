@@ -1,0 +1,11 @@
+symbol_name: RNPCSRHook
+offsets:
+  user_agent: 0x0079FDA0
+  resource_check: 0x00081BC8
+user_agent: PatchworkLBP1 2.0
+name: LittleBigPlanet
+versions:
+  - "01.30"
+title_ids:
+  - BCES00141
+ppu_hash: PPU-545c1abbf1c562d60fca7435401f020beab76b53
