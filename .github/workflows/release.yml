@@ -48,13 +48,18 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          choco install make
+          choco install make golang
         shell: pwsh
 
       - name: Build prx
         run: |
           make
         shell: pwsh
+
+      - name: Generate patch file
+        run: |
+          go get .
+          go run ./patch-generator -input ./patchwork.prx -config ./lbpdefs -output ./patchwork-rpcs3-patch.yml
 
       - name: Del Previous Release
         run: |
@@ -77,6 +82,7 @@ jobs:
             ./patchwork-rpcs3.sprx
             ./patchwork.sprx
             ./patchwork.prx
+            ./patchwork-rpcs3-patch.yml
 
       - name: Tagged Release
         uses: softprops/action-gh-release@v2
@@ -87,3 +93,4 @@ jobs:
             ./patchwork-rpcs3.sprx
             ./patchwork.sprx
             ./patchwork.prx
+            ./patchwork-rpcs3-patch.yml
