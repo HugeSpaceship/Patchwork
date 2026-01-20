@@ -206,6 +206,8 @@ void patch_thread(uint64_t arg) {
                 WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
                 WriteProcessMemory(processPid, (void*)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
             }
+
+            WriteProcessMemory(processPid, (void*)LBP2_NOTIFICATION_ENABLE_OFFSET, 0x38000000, 4);
             msgBuf[47] = '2';
             break;
         case 3:
@@ -221,6 +223,8 @@ void patch_thread(uint64_t arg) {
             if (read_digest) {
                 WriteProcessMemory(processPid, (void*)LBP3_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
             }
+
+            WriteProcessMemory(processPid, (void*)LBP3_NOTIFICATION_ENABLE_OFFSET, 0x38600000, 4);
             msgBuf[47] = '3';
             break;
         case 4:
