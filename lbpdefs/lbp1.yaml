@@ -2,6 +2,9 @@ symbol_name: RNPCSRHook
 offsets:
   user_agent: 0x0079FDA0
   resource_check: 0x00081BC8
+  http_url: 0x00767CF8
+  https_url: 0x00767C40
+  digest_key: 0x0079FBC0
 user_agent: PatchworkLBP1 2.0
 name: LittleBigPlanet
 versions:

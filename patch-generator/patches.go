@@ -27,6 +27,8 @@ type PatchFile struct {
 	Patches map[string]map[string]RPCS3Patch `yaml:",inline"`
 }
 
+const CUtf8PatchType = "cutf8"
+
 func (e PatchEntry) MarshalYAML() ([]byte, error) {
 	if e.Address == 0 {
 		return []byte(fmt.Sprintf("[%s, 0x0, %s]", e.Type, e.Value)), nil

@@ -1,0 +1,10 @@
+servers:
+  - name: Beacon
+    owner: LBP Union
+    description: LBP Union's custom server running on Project Lighthouse
+    primary_url: http://lighthouse.lbpunion.com/LITTLEBIGPLANETPS3_XML
+  - name: Bonsai
+    owner: Bonsai Team
+    description: The Bonsai custom server running on Refresh
+    primary_url: http://lbp.lbpbonsai.com/lbp
+    custom_digest: CustomServerDigest

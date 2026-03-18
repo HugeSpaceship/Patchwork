@@ -2,6 +2,9 @@ symbol_name: LBP2ScriptHook
 offsets:
   user_agent: 0x00C36320
   resource_check: 0x00153D74
+  http_url: 0x00c51c08
+  https_url: 0x00c51b68
+  digest_key: 0x00c361d0
 user_agent: PatchworkLBP2 2.0
 name: LittleBigPlanet 2
 versions:
