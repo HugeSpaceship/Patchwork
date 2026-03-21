@@ -9,7 +9,7 @@ LD = $(PPU_DIR)/$(PPU_PREFIX)gcc
 AS = $(PPU_DIR)/$(PPU_PREFIX)as
 
 SCETOOL ?= ./scetool.exe
-MAKE_FSELF ?= $(HOST_DIR)/make_fself.exe
+MAKE_FSELF ?= $(HOST_DIR)/make_fself
 
 CFLAGS = -std=c99 -Wall
 

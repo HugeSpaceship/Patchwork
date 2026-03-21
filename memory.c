@@ -21,10 +21,10 @@ __attribute__((noinline)) int PS3MAPISetMemory(sys_pid_t pid, const void* destin
     return_to_user_prog(int);
 }
 
+int useHenSyscalls = false;
+
 int WriteProcessMemory(const uint32_t pid, const void* address, const void* data, const size_t size)
 {
-    bool useHenSyscalls = false;
-
     if (!useHenSyscalls)
     {
         const int canWrite = sys_dbg_write_process_memory(pid, address, data, size);
@@ -52,8 +52,6 @@ __attribute__((noinline)) int PS3MAPIGetMemory(sys_pid_t pid, void* destination,
 
 int ReadProcessMemory(const uint32_t pid, void* address, void* data, const size_t size)
 {
-    static bool useHenSyscalls = false;
-
     if (!useHenSyscalls)
     {
         const int canRead = sys_dbg_read_process_memory(pid, address, data, size);
