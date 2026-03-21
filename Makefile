@@ -40,8 +40,16 @@ $(RPCS3_SPRX_TARGET): $(PRX_TARGET)
 clean:
 	rm -rf $(OBJS_DIR) $(PRX_TARGET) $(SYM_TARGET) $(SPRX_TARGET) $(RPCS3_SPRX_TARGET)
 
+patch-tool:
+	go build -o patch-generator/patch-generator ./patch-generator
+
+patches: $(PRX_TARGET) patch-tool
+	./patch-generator/patch-generator -input ./patchwork.prx -config ./lbpdefs -output ./patchwork-rpcs3-patch.yml
+
+
 install: $(SPRX_TARGET)
 	pwsh .\scripts\install.ps1 -PS3IP $(PS3_IP)
 
 run: install
 	pwsh .\scripts\run.ps1 -PS3IP $(PS3_IP)
+
