@@ -36,7 +36,7 @@ LBP3ScriptHook:
     bne bail # Fail resource load
 
     lbz r3, 0x23(r29) # 0x23 bytes in is the resource type
-    cmpwi cr7, r3, 0x1 # if the resource is a script
+    cmpwi cr7, r3, 0xB # if the resource is a script
     beq cr7, bail # branch if it's NOT a script
 
     ba 0x1CFC78 # continue to next check
