@@ -7,8 +7,8 @@ PPU_LIBS	= $(CELL_TARGET_PATH)/ppu/lib/fno-exceptions/fno-rtti/libc.a
 PPU_LIBS	+= $(CELL_TARGET_PATH)/ppu/lib/hash/libsha256.a
 PPU_PRX_LDFLAGS 	= -zgenprx -zgenstub -lio_stub -lfs_stub -lsysutil_stub -lsysmodule_stub -Wl,--strip-unused-data
 
-SPRX_TARGET = $(basename $(PRX_TARGET)).sprx
-RPCS3_SPRX_TARGET = $(basename $(PRX_TARGET))-rpcs3.sprx
+SPRX_TARGET = $(basename $(PRX_TARGET))-signed.sprx
+RPCS3_SPRX_TARGET = $(basename $(PRX_TARGET)).sprx
 SYM_TARGET = $(basename $(PRX_TARGET)).sym
 OBJS_DIR = ./objs
 C_OBJS = $(patsubst %, $(OBJS_DIR)/%.ppu.o, $(basename $(C_SRCS)))

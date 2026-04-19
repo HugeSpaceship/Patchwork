@@ -1,0 +1,7 @@
+CompileFlags:
+  Add:
+    - "-I/usr/local/cell/target/common/include"
+    - "-I/usr/local/cell/target/ppu/include"
+  Compiler: /usr/local/cell/host-win32/ppu/bin/ppu-lv2-gcc
+Diagnostics:
+  Suppress: attribute_wrong_number_arguments

@@ -1,0 +1,16 @@
+symbol_name: LBP3ScriptHook
+offsets:
+  user_agent: 0x00D8BF50
+  resource_check: 0x001CFC6C
+  http_url: 0x00D9E4C4
+  https_url: 0x00D9E5D8
+  digest_key: 0x00D8BD08
+  live_url: 0x00D842EC
+  presence_url: 0x00D8429C
+user_agent: PatchworkLBP3 2.0
+name: LittleBigPlanet 3
+versions:
+  - "01.26"
+title_ids:
+  - BCES02068
+ppu_hash: PPU-4ff9503c80ff356080c96f3828890906073b8e43

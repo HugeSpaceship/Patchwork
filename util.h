@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <sys/tty.h>
 
-char* trimEnd(char* str) {
+inline char* trimEnd(char* str) {
     if (str == NULL) return NULL;
     if (*str == '\0') return str;
 
@@ -16,6 +17,10 @@ char* trimEnd(char* str) {
     *(end + 1) = '\0';
 
     return str;
+}
+
+inline void println(const char* str) {
+    sys_tty_write(SYS_TTYP_PPU_STDOUT, str, strlen(str), NULL);
 }
 
 #endif // UTIL_H
