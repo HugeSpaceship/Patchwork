@@ -131,6 +131,11 @@ void patch_thread(uint64_t arg) {
     ReadProcessMemory(processPid, (void*)LBP3_NAME_OFFSET, ua, 20);
     if (ua[18] == '3') {
         game = 3;
+
+        const uint32_t ResourceCheckBranchInstruction = OPCODE_B + (((uint32_t)&LBP3ScriptHook - (uint32_t)LBP3_RESOURCE_CHECK_OFFSET) & 0x3ffffff);
+        // Hook RNP resource loading
+        WriteProcessMemory(processPid, (void*)LBP3_RESOURCE_CHECK_OFFSET, &ResourceCheckBranchInstruction, 4);
+
         goto foundGame;
     }
 
