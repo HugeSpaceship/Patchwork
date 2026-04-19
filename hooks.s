@@ -42,3 +42,16 @@ LBP3ScriptHook:
     ba 0x1CFC78 # continue to next check
 bail:
     ba 0x1CFD10
+
+.global LBP3JPScriptHook
+LBP3JPScriptHook:
+    cmpwi r3, 0
+    bne bail # Fail resource load
+
+    lbz r3, 0x23(r29)
+    cmpwi cr7, r3, 0xB
+    beq cr7, jpbail
+    
+    ba 0x1CFB14
+jpbail:
+    ba 0x1CFBAC
