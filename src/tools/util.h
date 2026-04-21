@@ -6,11 +6,11 @@
 #include <string.h>
 #include <sys/tty.h>
 
-inline char* trimEnd(char* str) {
+inline char *TrimEnd(char *str) {
     if (str == NULL) return NULL;
     if (*str == '\0') return str;
 
-    char* end = str + strlen(str) - 1;
+    char *end = str + strlen(str) - 1;
     while (end > str && isspace((unsigned char)*end)) end--;
 
     // Write new null terminator
@@ -19,7 +19,7 @@ inline char* trimEnd(char* str) {
     return str;
 }
 
-inline void println(const char* str) {
+inline void println(const char *str) {
     sys_tty_write(SYS_TTYP_PPU_STDOUT, str, strlen(str), NULL);
 }
 

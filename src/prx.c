@@ -11,9 +11,9 @@
 #include <cell/cell_fs.h>
 
 #include "offsets.h"
-#include "memory.h"
-#include "util.h"
-#include "hooks.h"
+#include "tools/memory.h"
+#include "tools/util.h"
+#include "hooks/script-block.h"
 
 #define STR1(x)  #x
 #define STR(x)  STR1(x)
@@ -21,12 +21,12 @@
 #define PATCHWORK_VERSION_MAJOR 1
 #define PATCHWORK_VERSION_MINOR 2
 
-SYS_MODULE_INFO(PatchWorkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
+SYS_MODULE_INFO(PatchworkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
 
-char* url = NULL;
-char* digest = NULL;
-char* lobby_password = NULL;
+char *url = NULL;
+char *digest = NULL;
+char *lobby_password = NULL;
 
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -40,7 +40,7 @@ char* lobby_password = NULL;
 #define SUCCESS_MESSAGE_WITH_PW "/popup.ps3?Patchwork%20"STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBP2%0ALobby%20password%20has%20been%20set&icon=8&snd=5"
 #define SUCCESS_MESSAGE_WITHOUT_PW "/popup.ps3?Patchwork%20"STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBP2%0ALobby%20password%20has%20been%20randomized&icon=8&snd=5"
 
-int ReadFile(const char* path, char* buf, int buf_size) {
+int ReadFile(const char *path, char *buf, int buf_size) {
     int fp;
 
     CellFsErrno err = cellFsOpen(path, CELL_FS_O_RDONLY, &fp, NULL, 0);
@@ -59,13 +59,13 @@ int ReadFile(const char* path, char* buf, int buf_size) {
     return 1;
 }
 
-void setmem(char* buf, int value, int size) {
+void setmem(char *buf, int value, int size) {
 	for (int i = 0; i < size; i++) {
 		buf[i] = value;
 	}
 }
 
-void WriteFile(const char* path, const void* buf, const uint64_t size) {
+void WriteFile(const char *path, const void *buf, const uint64_t size) {
     int fp;
 
     CellFsErrno err = cellFsOpen(path, CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &fp, NULL, 0);
@@ -86,30 +86,30 @@ void patch_thread(uint64_t arg) {
     uint8_t game = 0;
 
     int password_randomized = 1;
-    unsigned char * xxtea_key = __builtin_alloca(32);
+    unsigned char  *xxtea_key = __builtin_alloca(32);
     sys_time_sec_t sec = 0;
     sys_time_nsec_t nsec = 0;
     sys_time_get_current_time(&sec, &nsec);
     uint64_t combined_time = nsec + sec;
     cellSha256Digest(&combined_time, sizeof(uint64_t), xxtea_key);
 
-    char * ua = __builtin_alloca(20);
-    const char* user_agent;
+    char  *ua = __builtin_alloca(20);
+    const char *user_agent;
 
     ReadProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, ua, 20);
     if (ua[15] == '$') {
         game = 1;
 
-        // we need to patch the user agent *before* waiting for sys_fs
+        // we need to patch the user agent *before *waiting for sys_fs
         // to prevent a race condition which makes the game still send the unpatched user agent
         WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, LBP_NETWORK_KEY_SIZE);
         user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"\0\0\0";
         WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, LBP_DIGEST_LENGTH);
 
         // b RNPCSRHook
-        const uint32_t RNPBranchInstruction = OPCODE_B + (((uint32_t)&RNPCSRHook - (uint32_t)LBP1_RNP_QUEUE_OFFSET) & 0x3ffffff);
+        const uint32_t RNPBranchInstruction = OPCODE_B + (((uint32_t)&LBP1ScriptHook - (uint32_t)LBP1_RESOURCE_CHECK_OFFSET) & 0x3ffffff);
         // Hook RNP resource loading
-        WriteProcessMemory(processPid, (void*)LBP1_RNP_QUEUE_OFFSET, &RNPBranchInstruction, 4);
+        WriteProcessMemory(processPid, (void*)LBP1_RESOURCE_CHECK_OFFSET, &RNPBranchInstruction, 4);
 
         sys_timer_sleep(1); // LBP1 loads the sys_fs library quite late
         goto foundGame;
@@ -159,21 +159,21 @@ void patch_thread(uint64_t arg) {
     int patched = 1;
     // Hash the lobby password so we get an unrecoverable string of a fixed length
     if (read_password) {
-		lobby_password = trimEnd(lobby_password);
+		lobby_password = TrimEnd(lobby_password);
         cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
         password_randomized = 0;
     }
 	
 	// Trim strings so users editing text files by hand don't cause issues
 	if(read_digest) {
-		digest = trimEnd(digest);
+		digest = TrimEnd(digest);
 	}
 	
 	if(read_url) {
-		url = trimEnd(url);
+		url = TrimEnd(url);
 	}
 
-    char* msgBuf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
+    char *msgBuf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
 
     if (password_randomized == 0) {
         strcpy(msgBuf, SUCCESS_MESSAGE_WITH_PW);
@@ -195,7 +195,7 @@ void patch_thread(uint64_t arg) {
             }
 
             // Enable client-side check for LBP1 playlists
-            const char* playlist_check_override = "1";
+            const char *playlist_check_override = "1";
             WriteProcessMemory(processPid, (void*)LBP1_PLAYLIST_OFFSET, playlist_check_override, 1);
 
             msgBuf[47] = '1';
