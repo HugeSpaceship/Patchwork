@@ -1,18 +1,17 @@
 #include <sys/prx.h>
 #include <stdlib.h>
-#include <sys/ppu_thread.h> // sys_ppu_thread_yield
 #include <string.h>
 #include <sys/process.h>
-#include <sysutil/sysutil_msgdialog.h>
 #include <cell/hash/libsha256.h>
 
 #include <sys/sys_time.h>
 #include <sys/timer.h>
-#include <cell/cell_fs.h>
+
+#include "hooks/hooks.h"
+#include "tools/util.h"
+#include "tools/fs.h"
 
 #include "offsets.h"
-#include "tools/memory.h"
-#include "tools/util.h"
 #include "hooks/script-block.h"
 
 #define STR1(x)  #x
@@ -26,12 +25,8 @@ SYS_MODULE_START(start);
 
 char *url = NULL;
 char *digest = NULL;
-char *lobby_password = NULL;
-
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
-#define ERROR_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_DIALOG_TYPE_ERROR | CELL_MSGDIALOG_TYPE_SE_MUTE_OFF | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL);
 
 #define LOBBY_PASSWORD_PATH "/dev_hdd0/plugins/patchwork/patchwork_lobby_password.txt"
 #define GAME_URL_PATH "/dev_hdd0/plugins/patchwork/patchwork_url.txt"
@@ -40,235 +35,158 @@ char *lobby_password = NULL;
 #define SUCCESS_MESSAGE_WITH_PW "/popup.ps3?Patchwork%20"STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBP2%0ALobby%20password%20has%20been%20set&icon=8&snd=5"
 #define SUCCESS_MESSAGE_WITHOUT_PW "/popup.ps3?Patchwork%20"STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBP2%0ALobby%20password%20has%20been%20randomized&icon=8&snd=5"
 
-int ReadFile(const char *path, char *buf, int buf_size) {
-    int fp;
-
-    CellFsErrno err = cellFsOpen(path, CELL_FS_O_RDONLY, &fp, NULL, 0);
-    if (err != CELL_FS_SUCCEEDED) {
-        return 0;
-    }
-
-    err = cellFsRead(fp, buf, buf_size, NULL);
-    if (err != CELL_FS_SUCCEEDED) {
-        ERROR_DIALOG("Failed to read file");
-        cellFsClose(fp);
-        return 0;
-    }
-
-    cellFsClose(fp);
-    return 1;
-}
-
-void setmem(char *buf, int value, int size) {
-	for (int i = 0; i < size; i++) {
-		buf[i] = value;
-	}
-}
-
-void WriteFile(const char *path, const void *buf, const uint64_t size) {
-    int fp;
-
-    CellFsErrno err = cellFsOpen(path, CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &fp, NULL, 0);
-    if (err != CELL_FS_SUCCEEDED) {
-        goto fail;
-    }
-
-    cellFsWrite(fp, buf, size, NULL);
-
-    fail:
-    cellFsClose(fp);
-}
-
-
-void patch_thread(uint64_t arg) {
-
-    const sys_pid_t processPid = sys_process_getpid();
-    uint8_t game = 0;
-
-    int password_randomized = 1;
-    unsigned char  *xxtea_key = __builtin_alloca(32);
-    sys_time_sec_t sec = 0;
-    sys_time_nsec_t nsec = 0;
-    sys_time_get_current_time(&sec, &nsec);
-    uint64_t combined_time = nsec + sec;
-    cellSha256Digest(&combined_time, sizeof(uint64_t), xxtea_key);
-
-    char  *ua = __builtin_alloca(20);
-    const char *user_agent;
-
-    ReadProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, ua, 20);
-    if (ua[15] == '$') {
-        game = 1;
-
-        // we need to patch the user agent *before *waiting for sys_fs
-        // to prevent a race condition which makes the game still send the unpatched user agent
-        WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, LBP_NETWORK_KEY_SIZE);
-        user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR)"\0\0\0";
-        WriteProcessMemory(processPid, (void*)LBP1_USER_AGENT_OFFSET, user_agent, LBP_DIGEST_LENGTH);
-
-        // b RNPCSRHook
-        const uint32_t RNPBranchInstruction = OPCODE_B + (((uint32_t)&LBP1ScriptHook - (uint32_t)LBP1_RESOURCE_CHECK_OFFSET) & 0x3ffffff);
-        // Hook RNP resource loading
-        WriteProcessMemory(processPid, (void*)LBP1_RESOURCE_CHECK_OFFSET, &RNPBranchInstruction, 4);
-
-        sys_timer_sleep(1); // LBP1 loads the sys_fs library quite late
-        goto foundGame;
-    }
-
-    ReadProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, ua, 20);
-    if (ua[18] == '2') {
-        game = 2;
-
-        // b RNPCSRHook
-        const uint32_t ResourceCheckBranchInstruction = OPCODE_B + (((uint32_t)&LBP2ScriptHook - (uint32_t)LBP2_RESOURCE_CHECK_OFFSET) & 0x3ffffff);
-        // Hook RNP resource loading
-        WriteProcessMemory(processPid, (void*)LBP2_RESOURCE_CHECK_OFFSET, &ResourceCheckBranchInstruction, 4);
-
-
-        goto foundGame;
-    }
-
-    ReadProcessMemory(processPid, (void*)LBP3_NAME_OFFSET, ua, 20);
-    if (ua[18] == '3') {
-        game = 3;
-
-        const uint32_t ResourceCheckBranchInstruction = OPCODE_B + (((uint32_t)&LBP3ScriptHook - (uint32_t)LBP3_RESOURCE_CHECK_OFFSET) & 0x3ffffff);
-        // Hook RNP resource loading
-        WriteProcessMemory(processPid, (void*)LBP3_RESOURCE_CHECK_OFFSET, &ResourceCheckBranchInstruction, 4);
-
-        goto foundGame;
-    }
-
-    ReadProcessMemory(processPid, (void*)LBP3_JP_NAME_OFFSET, ua, 20);
-    if (ua[18] == '3') {
-        game = 4;
-    }
-
-    foundGame:
-
-    lobby_password = __builtin_alloca(16);
-	setmem(lobby_password, 0, 16);
-    const int read_password = ReadFile(LOBBY_PASSWORD_PATH, lobby_password, 16);
-    url = __builtin_alloca(70);
-	setmem(url, 0, 70);
-    const int read_url = ReadFile(GAME_URL_PATH, url, 70);
-    digest = __builtin_alloca(LBP_DIGEST_LENGTH);
-	setmem(digest, 0, LBP_DIGEST_LENGTH);
-    const int read_digest = ReadFile(DIGEST_PATH, digest, LBP_DIGEST_LENGTH);
-
-    int patched = 1;
-    // Hash the lobby password so we get an unrecoverable string of a fixed length
-    if (read_password) {
-		lobby_password = TrimEnd(lobby_password);
-        cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
-        password_randomized = 0;
-    }
-	
-	// Trim strings so users editing text files by hand don't cause issues
-	if(read_digest) {
-		digest = TrimEnd(digest);
-	}
-	
-	if(read_url) {
-		url = TrimEnd(url);
-	}
-
-    char *msgBuf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
-
-    if (password_randomized == 0) {
-        strcpy(msgBuf, SUCCESS_MESSAGE_WITH_PW);
-    } else {
-        strcpy(msgBuf, SUCCESS_MESSAGE_WITHOUT_PW);
-    }
-
-    switch (game) {
-        case 1:
-            if (password_randomized == 0) {
-                WriteProcessMemory(processPid, (void*)LBP1_NETWORK_KEY_OFFSET, xxtea_key, 16);
-            }
-            if (read_digest) {
-                WriteProcessMemory(processPid, (void*)LBP1_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
-            }
-            if (read_url) {
-                WriteProcessMemory(processPid, (void*)LBP1_HTTP_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP1_HTTPS_URL_OFFSET, url, strlen(url)+1);
-            }
-
-            // Enable client-side check for LBP1 playlists
-            const char *playlist_check_override = "1";
-            WriteProcessMemory(processPid, (void*)LBP1_PLAYLIST_OFFSET, playlist_check_override, 1);
-
-            msgBuf[47] = '1';
-            break;
-        case 2:
-            user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
-            WriteProcessMemory(processPid, (void*)LBP2_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
-            WriteProcessMemory(processPid, (void*)LBP2_NETWORK_KEY_OFFSET, xxtea_key, 16);
-            if (read_digest) {
-                WriteProcessMemory(processPid, (void*)LBP2_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
-            }
-            if (read_url) {
-                WriteProcessMemory(processPid, (void*)LBP2_HTTP_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP2_HTTPS_URL_OFFSET, url, strlen(url)+1);
-            }
-            uint32_t lbp2NotificationPatch = 0x38000000;
-            WriteProcessMemory(processPid, (void*)LBP2_NOTIFICATION_ENABLE_OFFSET, &lbp2NotificationPatch, 4);
-            msgBuf[47] = '2';
-            break;
-        case 3:
-            user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
-            WriteProcessMemory(processPid, (void*)LBP3_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
-            WriteProcessMemory(processPid, (void*)LBP3_NETWORK_KEY_OFFSET, xxtea_key, 16);
-            if (read_url) {
-                WriteProcessMemory(processPid, (void*)LBP3_HTTP_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_HTTPS_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_LIVE_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_PRESENCE_URL_OFFSET, url, strlen(url)+1);
-            }
-            if (read_digest) {
-                WriteProcessMemory(processPid, (void*)LBP3_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
-            }
-            uint32_t lbp3NotificationPatch = 0x38600000;
-            WriteProcessMemory(processPid, (void*)LBP3_NOTIFICATION_ENABLE_OFFSET, &lbp3NotificationPatch, 4);
-            msgBuf[47] = '3';
-            break;
-        case 4:
-            user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
-            WriteProcessMemory(processPid, (void*)LBP3_JP_USER_AGENT_OFFSET, user_agent, strlen(user_agent)+1);
-            WriteProcessMemory(processPid, (void*)LBP3_JP_NETWORK_KEY_OFFSET, xxtea_key, 16);
-            if (read_url) {
-                WriteProcessMemory(processPid, (void*)LBP3_JP_HTTP_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_JP_HTTPS_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_JP_LIVE_URL_OFFSET, url, strlen(url)+1);
-                WriteProcessMemory(processPid, (void*)LBP3_JP_PRESENCE_URL_OFFSET, url, strlen(url)+1);
-            }
-            if (read_digest) {
-                WriteProcessMemory(processPid, (void*)LBP3_JP_DIGEST_OFFSET, digest, LBP_DIGEST_LENGTH);
-            }
-            msgBuf[47] = '3';
-            break;
-        default:
-            ERROR_DIALOG("Failed to detect game, your online is not safe!");
-            patched = 0;
-            break;
-    }
-
-    if (patched == 1) {
-        WriteFile("/dev_hdd0/tmp/wm_request", msgBuf, strlen(msgBuf));
-    }
-
-    sys_ppu_thread_exit(0);
-}
-
-
-sys_ppu_thread_t threadID = 0;
+// Not reallyyy used right now, but could be useful later
+enum GameNumber {
+    GAME_LBP1,
+    GAME_LBP2,
+    GAME_LBP3,
+    GAME_LBP3_JP,
+};
 
 int start(void);
 int start(void)
 {
-    sys_ppu_thread_yield(); // Yield to hopefully let IO finish loading important crap
+    int password_randomized = 1;
 
-    sys_ppu_thread_create(&threadID, patch_thread, 0, 3071, 4096, SYS_PPU_THREAD_CREATE_JOINABLE, "Patchwork-thread");
+    unsigned char xxtea_key[32];
+    char *lobby_password = __builtin_alloca(16);
+	memset(lobby_password, 0, 16);
+    const int read_password = ReadFile(LOBBY_PASSWORD_PATH, lobby_password, 16);
 
+    if (read_password) {
+		lobby_password = TrimEnd(lobby_password);
+        // Hash the lobby password so we get an unrecoverable string of a fixed length
+        cellSha256Digest(lobby_password, strlen(lobby_password), xxtea_key);
+        password_randomized = 0;
+    } else {
+        // Generate random key
+        sys_time_sec_t sec = 0;
+        sys_time_nsec_t nsec = 0;
+        sys_time_get_current_time(&sec, &nsec);
+        uint64_t combined_time = nsec + sec;
+        cellSha256Digest(&combined_time, sizeof(uint64_t), xxtea_key);
+    }
+    
+    url = __builtin_alloca(70);
+	memset(url, 0, 70);
+    const int read_url = ReadFile(GAME_URL_PATH, url, 70);
+
+    if(read_url) {
+		url = TrimEnd(url);
+	}
+
+    digest = __builtin_alloca(LBP_DIGEST_LENGTH);
+	memset(digest, 0, LBP_DIGEST_LENGTH);
+    const int read_digest = ReadFile(DIGEST_PATH, digest, LBP_DIGEST_LENGTH);
+	
+	if(read_digest) {
+		digest = TrimEnd(digest);
+	}
+
+    char *user_agent;
+
+    // Init patch generics
+    void *network_key_offset = NULL;
+    void *user_agent_offset = NULL;
+    void *https_url_offset = NULL;
+    void *http_url_offset = NULL;
+    void *digest_offset = NULL;
+    void *presence_url_offset = NULL;
+    void *live_url_offset = NULL;
+    void *notification_enable_offset = NULL;
+    uint32_t notification_enable_instr = 0;
+    void *rescheck_offset = NULL;
+    void *rescheck_hook = NULL;
+
+    uint8_t game = 0;
+
+    if (((char *)LBP1_USER_AGENT_OFFSET)[15] == '$' && !game) {
+        game = GAME_LBP1;
+        user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        network_key_offset = (void *)LBP1_NETWORK_KEY_OFFSET;
+        user_agent_offset = (void *)LBP1_USER_AGENT_OFFSET;
+        https_url_offset = (void *)LBP1_HTTPS_URL_OFFSET;
+        http_url_offset = (void *)LBP1_HTTP_URL_OFFSET;
+        digest_offset = (void *)LBP1_DIGEST_OFFSET;
+        rescheck_offset = (void *)LBP1_RESOURCE_CHECK_OFFSET;
+        rescheck_hook = LBP1ScriptHook;
+    }
+
+    if (((char *)LBP2_USER_AGENT_OFFSET)[18] == '2' && !game) {
+        game = GAME_LBP2;
+        user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        network_key_offset = (void *)LBP2_NETWORK_KEY_OFFSET;
+        user_agent_offset = (void *)LBP2_USER_AGENT_OFFSET;
+        https_url_offset = (void *)LBP2_HTTPS_URL_OFFSET;
+        http_url_offset = (void *)LBP2_HTTP_URL_OFFSET;
+        digest_offset = (void *)LBP2_DIGEST_OFFSET;
+        notification_enable_offset = (void *)LBP2_NOTIFICATION_ENABLE_OFFSET;
+        notification_enable_instr = 0x38000000; // li r0, 0
+        rescheck_offset = (void *)LBP2_RESOURCE_CHECK_OFFSET;
+        rescheck_hook = LBP2ScriptHook;
+    }
+
+    if (((char *)LBP3_USER_AGENT_OFFSET)[18]) {
+        game = GAME_LBP3;
+        user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        network_key_offset = (void *)LBP3_NETWORK_KEY_OFFSET;
+        user_agent_offset = (void *)LBP3_USER_AGENT_OFFSET;
+        https_url_offset = (void *)LBP3_HTTPS_URL_OFFSET;
+        http_url_offset = (void *)LBP3_HTTP_URL_OFFSET;
+        digest_offset = (void *)LBP3_DIGEST_OFFSET;
+        presence_url_offset = (void *)LBP3_PRESENCE_URL_OFFSET;
+        live_url_offset = (void *)LBP3_LIVE_URL_OFFSET;
+        notification_enable_offset = (void *)LBP3_NOTIFICATION_ENABLE_OFFSET;
+        notification_enable_instr = 0x38600000; // li r3, 0
+        rescheck_offset = (void *)LBP3_RESOURCE_CHECK_OFFSET;
+        rescheck_hook = LBP3ScriptHook;
+    }
+
+    if (((char *)LBP3_JP_USER_AGENT_OFFSET)[18]) {
+        game = GAME_LBP3_JP;
+        user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        network_key_offset = (void *)LBP3_JP_NETWORK_KEY_OFFSET;
+        user_agent_offset = (void *)LBP3_JP_USER_AGENT_OFFSET;
+        https_url_offset = (void *)LBP3_JP_HTTPS_URL_OFFSET;
+        http_url_offset = (void *)LBP3_JP_HTTP_URL_OFFSET;
+        digest_offset = (void *)LBP3_JP_DIGEST_OFFSET;
+        presence_url_offset = (void *)LBP3_JP_PRESENCE_URL_OFFSET;
+        live_url_offset = (void *)LBP3_JP_LIVE_URL_OFFSET;
+        // notification_enable_offset = (void *)LBP3_JP_NOTIFICATION_ENABLE_OFFSET; // TODO: Find this
+        // notification_enable_instr = 0x38600000;
+        rescheck_offset = (void *)LBP3_JP_RESOURCE_CHECK_OFFSET;
+        rescheck_hook = LBP3JPScriptHook;
+    }
+
+    if (!game) {
+        ERROR_DIALOG("Failed to detect game, your online is not safe!");
+    } else {
+        char *msgBuf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
+
+        if (password_randomized == 0) {
+            strcpy(msgBuf, SUCCESS_MESSAGE_WITH_PW);
+        } else {
+            strcpy(msgBuf, SUCCESS_MESSAGE_WITHOUT_PW);
+        }
+
+        WriteFile("/dev_hdd0/tmp/wm_request", msgBuf, strlen(msgBuf));
+    }
+
+    size_t url_len = strlen(url) + 1;
+
+    // Write to the chosen offets
+    if (network_key_offset) memcpy(network_key_offset, xxtea_key, LBP_NETWORK_KEY_SIZE);
+    if (user_agent_offset) memcpy(user_agent_offset, user_agent, strlen(user_agent) + 1);
+    if (https_url_offset) memcpy(https_url_offset, url, url_len);
+    if (http_url_offset) memcpy(http_url_offset, url, url_len);
+    if (digest_offset) memcpy(digest_offset, digest, LBP_DIGEST_LENGTH);
+    if (presence_url_offset) memcpy(presence_url_offset, url, url_len);
+    if (live_url_offset) memcpy(live_url_offset, url, url_len);
+    if (notification_enable_offset && notification_enable_instr) 
+        *(uint32_t *)notification_enable_offset = notification_enable_instr;
+    if (rescheck_offset && rescheck_hook)
+        *(uint32_t *)rescheck_offset = OPCODE_B + (((uint32_t)&rescheck_hook - (uint32_t)rescheck_offset) & 0x3ffffff);
+
+    // Exit
     return SYS_PRX_NO_RESIDENT;
 }

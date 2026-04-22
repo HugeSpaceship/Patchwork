@@ -5,8 +5,11 @@
 #include <ctype.h>
 #include <string.h>
 #include <sys/tty.h>
+#include <sysutil/sysutil_msgdialog.h>
 
-inline char *TrimEnd(char *str) {
+#define ERROR_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_DIALOG_TYPE_ERROR | CELL_MSGDIALOG_TYPE_SE_MUTE_OFF | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL);
+
+static inline char *TrimEnd(char *str) {
     if (str == NULL) return NULL;
     if (*str == '\0') return str;
 
@@ -19,7 +22,7 @@ inline char *TrimEnd(char *str) {
     return str;
 }
 
-inline void println(const char *str) {
+static inline void println(const char *str) {
     sys_tty_write(SYS_TTYP_PPU_STDOUT, str, strlen(str), NULL);
 }
 

@@ -2,7 +2,7 @@
 objs/
 patchwork.prx
 patchwork.sprx
-patchwork-rpcs3.sprx
+patchwork-fake-signed.sprx
 patchwork-signed.sprx
 patchwork.sym
 patchwork-rpcs3-patch.yml
