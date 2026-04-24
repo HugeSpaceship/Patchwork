@@ -1,4 +1,4 @@
-symbol_name: RNPCSRHook
+symbol_name: LBP1ScriptHook
 offsets:
   user_agent: 0x0079FDA0
   resource_check: 0x00081BC8
