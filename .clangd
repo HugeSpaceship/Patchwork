@@ -1,3 +1,5 @@
+# TODO: clangd hates declaring major and minor version in config.mk, ignoring for now
+
 CompileFlags:
   Add:
     - "-I/usr/local/cell/target/common/include"
