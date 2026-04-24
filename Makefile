@@ -65,18 +65,20 @@ patches: $(PRX_TARGET) patch-tool
 	./patch-generator/patch-generator -input ./patchwork.prx -config ./lbpdefs -output ./patchwork-rpcs3-patch.yml
 
 
+ifeq ($(OS),WINDOWS_NT)
 install: $(SPRX_TARGET)
-	ifeq ($OS, WINDOWS_NT)
-		pwsh .\scripts\install.ps1 -PS3IP $(PS3_IP)
-	else
-		curl -T ./$(SPRX_TARGET) ftp://$(PS3_IP)/dev_hdd0/plugins/$(SPRX_TARGET)
-	endif
+	pwsh .\scripts\install.ps1 -PS3IP $(PS3_IP)
+else
+install:
+	curl -T ./$(SPRX_TARGET) ftp://$(PS3_IP)/dev_hdd0/plugins/patchwork.sprx
+endif
 
+ifeq ($(OS),WINDOWS_NT)
 run: install
-	ifeq ($OS, WINDOWS_NT)
-		pwsh .\scripts\run.ps1 -PS3IP $(PS3_IP)
-	else
-		curl http://$(PS3_IP)/play.ps3
-	endif
+	pwsh .\scripts\run.ps1 -PS3IP $(PS3_IP)
+else
+run: install
+	curl http://$(PS3_IP)/play.ps3
+endif
 	
 
