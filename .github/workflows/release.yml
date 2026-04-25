@@ -79,8 +79,8 @@ jobs:
           generate_release_notes: true
           tag_name: latest
           files: |
-            ./patchwork-rpcs3.sprx
-            ./patchwork.sprx
+            ./patchwork-fake-signed.sprx
+            ./patchwork-signed.sprx
             ./patchwork.prx
             ./patchwork-rpcs3-patch.yml
 
