@@ -8,6 +8,7 @@ SRC_DIRS = \
 	$(SRC_DIR) \
 	$(SRC_DIR)/tools \
 	$(SRC_DIR)/hooks \
+	$(SRC_DIR)/toml \
 
 PRX_TARGET = patchwork.prx
 
