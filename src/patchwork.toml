@@ -1,0 +1,6 @@
+# This is an example of the main configuration
+[patchwork]
+server_url = "http://lbp.lbpbonsai.com/lbp"
+digest_key = "CustomServerDigest"
+join_key = "password123"
+enable_join_key = true
