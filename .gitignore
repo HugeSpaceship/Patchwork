@@ -12,3 +12,6 @@ patch-generator
 scetool.exe
 scetool
 data/
+
+# MacOS Garbage
+.DS_Store
