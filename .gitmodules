@@ -1,0 +1,4 @@
+[submodule "src/toml"]
+	path = src/toml
+	url = https://github.com/FeTetra/badtoml
+	branch = ps3-sdk-compat
