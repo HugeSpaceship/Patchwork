@@ -5,6 +5,8 @@ on:
       - main
     tags:
       - '*'
+with:
+  submodules: recursive
 
 permissions:
   contents: write
