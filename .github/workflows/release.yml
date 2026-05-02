@@ -5,7 +5,6 @@ on:
       - main
     tags:
       - '*'
-      
 permissions:
   contents: write
 
@@ -17,7 +16,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
         with:
-          submodules: recurse
+          submodules: recursive
 
       - name: Set PS3_SDK path
         id: set_ps3_sdk
