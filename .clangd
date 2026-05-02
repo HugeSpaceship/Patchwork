@@ -1,9 +1,9 @@
-# TODO: clangd hates declaring major and minor version in config.mk, ignoring for now
-
 CompileFlags:
   Add:
     - "-I/usr/local/cell/target/common/include"
     - "-I/usr/local/cell/target/ppu/include"
+    - "-DPATCHWORK_VERSION_MAJOR=0" # CLANGD PLEASE
+    - "-DPATCHWORK_VERSION_MINOR=0" # SHUT UP
   Compiler: /usr/local/cell/host-win32/ppu/bin/ppu-lv2-gcc
 Diagnostics:
   Suppress: attribute_wrong_number_arguments
