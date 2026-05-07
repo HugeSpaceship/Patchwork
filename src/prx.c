@@ -31,9 +31,9 @@ SYS_MODULE_START(start);
 int start(void);
 int start(void)
 {
-    sys_addr_t *mem_page = (sys_addr_t *)0xFBEEF;
+    sys_addr_t mem_page = NULL;
     size_t top = 0;
-    sys_memory_allocate(SIZE_1K, SYS_MEMORY_PAGE_SIZE_64K, mem_page);
+    sys_memory_allocate(SIZE_1K, SYS_MEMORY_PAGE_SIZE_64K, &mem_page);
 
     println("loading modules\n");
     cellSysmoduleLoadModule(CELL_SYSMODULE_FS);
@@ -50,7 +50,7 @@ int start(void)
     }
 
     println("initializing http\n");
-    void *http_pool = mem_page + top;
+    void *http_pool = (void *)mem_page + top;
     size_t http_pool_size = SIZE_1K;
     top += http_pool_size;
     ret = cellHttpInit(http_pool, http_pool_size);
@@ -155,7 +155,7 @@ int start(void)
     cellHttpDestroyClient(client);
 
     cellHttpEnd();
-    sys_memory_free(*mem_page);
+    sys_memory_free(mem_page);
 
     sys_net_finalize_network();
 
