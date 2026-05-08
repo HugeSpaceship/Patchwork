@@ -9,6 +9,7 @@ SRC_DIRS = \
 	$(SRC_DIR)/tools \
 	$(SRC_DIR)/hooks \
 	$(SRC_DIR)/toml \
+	$(SRC_DIR)/http \
 
 PRX_TARGET = patchwork.prx
 

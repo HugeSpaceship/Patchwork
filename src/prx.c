@@ -11,19 +11,15 @@
 
 #include "hooks/hooks.h"
 #include "hooks/script-block.h"
-#include "toml/helper.h"
 #include "tools/util.h"
 #include "tools/fs.h"
 #include "offsets.h"
+#include "update.h"
 #include "globals.h"
 
 #include "toml/toml.h"
 #include "toml/keymap.h"
 #include "toml/tokenizer.h"
-
-#define SIZE_1K (64 * 1024)
-#define URI_STRING "http://10.0.0.1:8000/patchwork.sprx"
-#define OUT_PATH "/dev_hdd0/plugins/patchwork/patchwork.sprx"
 
 SYS_MODULE_INFO(PatchworkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
@@ -31,157 +27,53 @@ SYS_MODULE_START(start);
 int start(void);
 int start(void)
 {
-    sys_addr_t mem_page = NULL;
-    size_t top = 0;
-    sys_memory_allocate(SIZE_1K, SYS_MEMORY_PAGE_SIZE_64K, &mem_page);
-
-    println("loading modules\n");
     cellSysmoduleLoadModule(CELL_SYSMODULE_FS);
     cellSysmoduleLoadModule(CELL_SYSMODULE_NET);
     cellSysmoduleLoadModule(CELL_SYSMODULE_HTTP);
-    char numbuf[32];
 
-    int ret;
-
-    println("initializing net\n");
-    ret = sys_net_initialize_network();
-    if (0 > ret) {
-        println("net wasnt initialized\n");
-    }
-
-    println("initializing http\n");
-    void *http_pool = (void *)mem_page + top;
-    size_t http_pool_size = SIZE_1K;
-    top += http_pool_size;
-    ret = cellHttpInit(http_pool, http_pool_size);
-    if (ret > 0) {
-        println("http wasnt initialized\n");
-    }
-
-    println("creating client\n");
-    CellHttpClientId client = 0;
-    ret = cellHttpCreateClient(&client);
-    if (0 > ret) {
-        println("client wasnt created\n");
-    }
-
-    println("parsing uri\n");
-    char uri_pool[64];
-    size_t expected_uri_size = 0;
-    CellHttpUri uri;
-    ret = cellHttpUtilParseUri(&uri, URI_STRING, uri_pool, 64, &expected_uri_size);
-    
-    if (0 > ret) {
-        println("uri wasnt parsed\n");
-    }
-
-    println("creating transaction\n");
-    CellHttpTransId trans = 0;
-    ret = cellHttpCreateTransaction(&trans, client, CELL_HTTP_METHOD_GET, &uri);
-    if (0 > ret) {
-        println("transaction not created\n");
-    }
-
-    println("sending request\n");
-    ret = cellHttpSendRequest(trans, NULL, 0, NULL); // Why?
-    if (0 > ret) {
-        println("request not sent\n");
-    }
-
-    println("getting response length\n");
-    uint64_t length = 0;
-    ret = cellHttpResponseGetContentLength(trans, &length);
-    if (0 > ret) {
-        println("length was not gotten\n");
-    }
-    UIntToStr(numbuf, 32, length, 16);
-    println(numbuf);
-    println(": response size\n");
-
-    println("opening file to write\n");
-    int fp;
-    CellFsErrno err = cellFsOpen(OUT_PATH,
-        CELL_FS_O_WRONLY | CELL_FS_O_CREAT | CELL_FS_O_TRUNC,
-        &fp, NULL, 0);
-
-    if (err != CELL_FS_SUCCEEDED) {
-        println("file wasn't opened\n");
-    }
-
-    char buffer[256];
-    uint64_t recvd = 0;
-    size_t local_recv = 0;
-
-    println("receiving response\n");
-
-    while (1) {
-        int ret = cellHttpRecvResponse(trans, buffer, sizeof(buffer), &local_recv);
-
-        if (0 > ret) {
-            println("recv error\n");
-            break;
-        }
-
-        if (local_recv == 0) {
-            println("done\n");
-            break;
-        }
-
-        uint64_t offset = 0;
-
-        while (offset < local_recv) {
-            uint64_t written = 0;
-
-            cellFsWrite(fp,
-                buffer + offset,
-                local_recv - offset,
-                &written);
-
-            if (written == 0) {
-                println("write error\n");
-                break;
-            }
-
-            offset += written;
-        }
-
-        recvd += local_recv;
-    }
-
-    cellFsClose(fp);
-
-    cellHttpTransactionCloseConnection(trans);
-    cellHttpDestroyTransaction(trans);
-    cellHttpDestroyClient(client);
-
-    cellHttpEnd();
-    sys_memory_free(mem_page);
-
-    sys_net_finalize_network();
-
-    cellSysmoduleUnloadModule(CELL_SYSMODULE_HTTP);
-    cellSysmoduleUnloadModule(CELL_SYSMODULE_NET);
-
-    char toml_buf[256];
-    ReadFile(MAIN_CONFIG_PATH, toml_buf, 256);
+    char toml_buf[312];
+    ReadFile(MAIN_CONFIG_PATH, toml_buf, 312);
+    println(toml_buf);
+    println("\n");
 
     Lexer l = MakeLexer(toml_buf);
-    TOMLEntry entries[4];
-    TOMLReadBuffer(&l, entries, 4);
+    TOMLEntry entries[CONFIG_ENTRY_COUNT];
+    TOMLReadBuffer(&l, entries, CONFIG_ENTRY_COUNT);
 
     char *server_url = NULL;
     char *join_key = NULL;
     char *digest_key = NULL;
     int enable_join_key = 1;
 
+    char *update_server_url = NULL;
+    int enable_updates = 1;
+
     TOMLKeyMap key_map[] = {
-        {MAIN_CONFIG_SECTION, "server_url", TOML_TYPE_STRING, &server_url},
-        {MAIN_CONFIG_SECTION, "join_key", TOML_TYPE_STRING, &join_key},
-        {MAIN_CONFIG_SECTION, "digest_key", TOML_TYPE_STRING, &digest_key},
-        {MAIN_CONFIG_SECTION, "enable_join_key", TOML_TYPE_BOOL, &enable_join_key},
+        {CONFIG_SECTION_MAIN, "server_url", TOML_TYPE_STRING, &server_url},
+        {CONFIG_SECTION_MAIN, "join_key", TOML_TYPE_STRING, &join_key},
+        {CONFIG_SECTION_MAIN, "digest_key", TOML_TYPE_STRING, &digest_key},
+        {CONFIG_SECTION_MAIN, "enable_join_key", TOML_TYPE_BOOL, &enable_join_key},
+        {CONFIG_SECTION_UPDATES, "update_server", TOML_TYPE_STRING, &update_server_url},
+        {CONFIG_SECTION_UPDATES, "enable_updates", TOML_TYPE_BOOL, &enable_updates},
     };
 
-    TOMLApplyEntriesToKeyMap(entries, 4, key_map, 4);
+    TOMLApplyEntriesToKeyMap(entries, CONFIG_ENTRY_COUNT, key_map, CONFIG_ENTRY_COUNT);
+
+    if (enable_updates && update_server_url) {
+        if (sys_net_initialize_network() == 0) {
+            sys_addr_t http_pool = NULL;
+            sys_memory_allocate(SIZE_64K, SYS_MEMORY_PAGE_SIZE_64K, &http_pool);
+
+            DownloadUpdate((void *)http_pool, SIZE_64K, update_server_url);
+
+            sys_memory_free(http_pool);
+
+            sys_net_finalize_network();
+        }
+    }
+
+    cellSysmoduleUnloadModule(CELL_SYSMODULE_HTTP);
+    cellSysmoduleUnloadModule(CELL_SYSMODULE_NET);
 
     unsigned char xxtea_key[32];
     int join_key_randomized = 1;
