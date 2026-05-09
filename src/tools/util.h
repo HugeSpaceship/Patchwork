@@ -26,4 +26,17 @@ static inline void println(const char *str) {
     sys_tty_write(SYS_TTYP_PPU_STDOUT, str, strlen(str), NULL);
 }
 
+static inline void ReplaceNext(char *str, char target, char c) {
+    size_t i = 0;
+    while (str[i] != target) {
+        if (str[i] == '\0') {
+            return;
+        }
+        
+        i++;
+    }
+
+    str[i] = c;
+}
+
 #endif // UTIL_H

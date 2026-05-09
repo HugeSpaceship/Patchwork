@@ -41,6 +41,20 @@ void HttpTransaction_dtor(HttpTransaction *trans) {
     cellHttpDestroyTransaction(trans->trans_id); // Better naming perchance
 }
 
+void HttpTransactionSendRequest(HttpTransaction *trans) {
+    trans->err = cellHttpSendRequest(trans->trans_id, NULL, 0, NULL);
+    if (trans->err < 0) {
+        return;
+    }
+
+    trans->err = cellHttpResponseGetContentLength(trans->trans_id, &trans->total);
+    if (trans->err < 0) {
+        return;
+    }
+
+    return;
+}
+
 // Function may not need to be in here but its fine for now
 int HttpDownloadFile(HttpContext *ctx, HttpTransaction *trans, const char *path) {
     int fd;
@@ -53,13 +67,8 @@ int HttpDownloadFile(HttpContext *ctx, HttpTransaction *trans, const char *path)
         return 0;
     }
 
-    trans->err = cellHttpSendRequest(trans->trans_id, NULL, 0, NULL);
+    HttpTransactionSendRequest(trans);
     if (trans->err < 0) {
-        return 0;
-    }
-
-    trans->err = cellHttpResponseGetContentLength(trans->trans_id, &trans->total);
-    if (trans-> err < 0) {
         return 0;
     }
     

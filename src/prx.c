@@ -11,6 +11,7 @@
 
 #include "hooks/hooks.h"
 #include "hooks/script-block.h"
+#include "toml/helper.h"
 #include "tools/util.h"
 #include "tools/fs.h"
 #include "offsets.h"
@@ -24,6 +25,8 @@
 SYS_MODULE_INFO(PatchworkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
 
+#define USER_AGENT "PatchworkLBPX " STR(PATCHWORK_VERSION_MAJOR) "." STR(PATCHWORK_VERSION_MINOR)
+
 int start(void);
 int start(void)
 {
@@ -31,10 +34,11 @@ int start(void)
     cellSysmoduleLoadModule(CELL_SYSMODULE_NET);
     cellSysmoduleLoadModule(CELL_SYSMODULE_HTTP);
 
+    char user_agent[32];
+    strcpy(user_agent, USER_AGENT);
+
     char toml_buf[312];
     ReadFile(MAIN_CONFIG_PATH, toml_buf, 312);
-    println(toml_buf);
-    println("\n");
 
     Lexer l = MakeLexer(toml_buf);
     TOMLEntry entries[CONFIG_ENTRY_COUNT];
@@ -94,8 +98,6 @@ int start(void)
         }
     }
 
-    char *user_agent;
-
     // Init patch generics
     void *network_key_offset = NULL;
     void *user_agent_offset = NULL;
@@ -113,7 +115,7 @@ int start(void)
 
     if (!game && ((char *)LBP1_USER_AGENT_OFFSET)[15] == '$') {
         game = GAME_LBP1;
-        user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        ReplaceNext(user_agent, 'X', '1');
         network_key_offset = (void *)LBP1_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP1_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP1_HTTPS_URL_OFFSET;
@@ -125,7 +127,7 @@ int start(void)
 
     if (!game && ((char *)LBP2_USER_AGENT_OFFSET)[18] == '2') {
         game = GAME_LBP2;
-        user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        ReplaceNext(user_agent, 'X', '7');
         network_key_offset = (void *)LBP2_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP2_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP2_HTTPS_URL_OFFSET;
@@ -139,7 +141,7 @@ int start(void)
 
     if (!game && ((char *)LBP3_USER_AGENT_OFFSET)[18]) {
         game = GAME_LBP3;
-        user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        ReplaceNext(user_agent, 'X', '3');
         network_key_offset = (void *)LBP3_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP3_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP3_HTTPS_URL_OFFSET;
@@ -155,7 +157,7 @@ int start(void)
 
     if (!game && ((char *)LBP3_JP_USER_AGENT_OFFSET)[18]) {
         game = GAME_LBP3_JP;
-        user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
+        
         network_key_offset = (void *)LBP3_JP_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP3_JP_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP3_JP_HTTPS_URL_OFFSET;
@@ -169,22 +171,27 @@ int start(void)
         rescheck_hook = LBP3JPScriptHook;
     }
 
+    char game_num_str[4];
+    UIntToStr(game_num_str, 4, game, 10);
+    ReplaceNext(user_agent, 'X', *game_num_str);
+
     if (!game) {
         ERROR_DIALOG("Failed to detect game, your online is not safe!");
     } else {
-        char *msgBuf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
+        char *msg_buf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
 
         if (enable_join_key) {
             if (!join_key_randomized) {
-                strcpy(msgBuf, SUCCESS_MESSAGE_WITH_PW);
+                strcpy(msg_buf, SUCCESS_MESSAGE_WITH_PW);
             } else {
-                strcpy(msgBuf, SUCCESS_MESSAGE_RANDOM_PW);
+                strcpy(msg_buf, SUCCESS_MESSAGE_RANDOM_PW);
             }
         } else {
-            strcpy(msgBuf, SUCCESS_MESSAGE_WITHOUT_PW);
+            strcpy(msg_buf, SUCCESS_MESSAGE_WITHOUT_PW);
         }
 
-        WriteFile("/dev_hdd0/tmp/wm_request", msgBuf, strlen(msgBuf));
+        ReplaceNext(msg_buf, 'X', *game_num_str);
+        WriteFile("/dev_hdd0/tmp/wm_request", msg_buf, strlen(msg_buf));
     }
 
     size_t url_len = 0;

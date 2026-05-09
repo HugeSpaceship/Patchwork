@@ -30,6 +30,7 @@ void HttpContext_dtor(HttpContext *ctx);
 
 HttpTransaction HttpTransaction_ctor(HttpContext *ctx, char *uri_string, const char *method);
 void HttpTransaction_dtor(HttpTransaction *trans);
+void HttpTransactionSendRequest(HttpTransaction *trans);
 
 int HttpDownloadFile(HttpContext *ctx, HttpTransaction *trans, const char *path);
 
