@@ -55,7 +55,6 @@ spec:
                   value: "{{revision}}"
                 - name: BUILD_ID
                   value: "$(context.pipelineRun.name)"
-                      key: "hub-token"
               workingDir: $(workspaces.source.path)
               script: |
                 #!/usr/bin/env bash
@@ -70,3 +69,4 @@ spec:
   workspaces:
     - name: source
       emptyDir: {}
+---
