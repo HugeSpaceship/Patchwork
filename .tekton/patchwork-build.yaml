@@ -60,7 +60,7 @@ spec:
                 #!/usr/bin/env bash
                 set -euo pipefail
                 make
-                echo "test"
+                echo "test2"
                 
         workspaces:
           - name: source
