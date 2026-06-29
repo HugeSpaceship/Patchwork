@@ -6,8 +6,8 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "2"
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
-    pipelinesascode.tekton.dev/on-event: "pull_request"
-    pipelinesascode.tekton.dev/on-target-branch: "[*]"
+    pipelinesascode.tekton.dev/on-event: "push"
+    pipelinesascode.tekton.dev/on-target-branch: "main"
     pipelinesascode.tekton.dev/on-path-change: "[Makefile, config.mk, src/***, .tekton/patchwork-build.yaml]"
 spec:
   params:
@@ -55,7 +55,6 @@ spec:
                   value: "{{revision}}"
                 - name: BUILD_ID
                   value: "$(context.pipelineRun.name)"
-                      key: "hub-token"
               workingDir: $(workspaces.source.path)
               script: |
                 #!/usr/bin/env bash
@@ -70,3 +69,4 @@ spec:
   workspaces:
     - name: source
       emptyDir: {}
+---
