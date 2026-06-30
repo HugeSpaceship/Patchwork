@@ -59,6 +59,7 @@ spec:
               script: |
                 #!/usr/bin/env bash
                 set -euo pipefail
+                ln -s /usr/local/cell/real/Tools/data .
                 make
                 
         workspaces:
