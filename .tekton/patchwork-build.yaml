@@ -131,7 +131,6 @@ spec:
                 #!/usr/bin/env sh
                 apk update
                 apk add make curl
-                sleep 300s
 
                 curl -X PUT --upload-file ./patchwork-fake-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/provider.token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA/patchwork-fake-signed.sprx
                 curl -X PUT --upload-file ./patchwork-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/provider.token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA/patchwork-signed.sprx
