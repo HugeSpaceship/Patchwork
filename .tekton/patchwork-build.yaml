@@ -88,6 +88,8 @@ spec:
               script: |
                 #!/usr/bin/env bash
                 set -euo pipefail
+                export
+                cat /etc/resolv.conf
                 sleep 200s
                 GIT_TRACE_CURL=1 GIT_TRACE=1 go get -v ./patch-generator
                 go build -o patchgen ./patch-generator
