@@ -101,7 +101,7 @@ spec:
           workspaces:
             - name: source
           steps:
-            - name: generate_patches
+            - name: generate-patches
               image: docker.io/library/alpine:latest
               workingDir: "$(workspaces.source.path)"
               script: |
