@@ -72,7 +72,7 @@ spec:
                 set -euo pipefail
                 ln -s /usr/local/cell/real/Tools/data .
                 make
-      - name: go_build
+      - name: go-build
         runAfter:
           - fetch
         workspaces:
@@ -90,9 +90,9 @@ spec:
                 set -euo pipefail
                 go get ./patch-generator
                 go build -o patchgen ./patch-generator
-      - name: patch_generate
+      - name: patch-generate
         runAfter:
-          - go_build
+          - go-build
           - build
         workspaces:
           - name: source
@@ -107,9 +107,9 @@ spec:
               script: |
                 #!/usr/bin/env sh
                 ./patchgen -input ./patchwork.prx -config ./lbpdefs -output ./patchwork-rpcs3-patch.yml
-      - name: upload_artifacts
+      - name: upload-artifacts
         runAfter:
-          - patch_generate
+          - patch-generate
         workspaces:
           - name: source
             workspace: source
