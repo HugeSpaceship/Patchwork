@@ -134,7 +134,6 @@ spec:
                 curl -X PUT --upload-file ./patchwork-rpcs3-patch.yml --user tekton:`cat $(workspaces.forgejo-token.path)/provider.token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA/patchwork-rpcs3-patch.yml
     workspaces:
       - name: source
-
   workspaces:
     - name: gocache
       volumeClaimTemplate:
