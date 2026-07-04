@@ -120,7 +120,7 @@ spec:
             - name: forgejo-token
           steps:
             - name: upload
-              image: curlimages/curl:latest
+              image: docker.io/library/alpine:latest
               workingDir: "$(workspaces.source.path)"
               env:
                 - name: BUILD_ID
@@ -129,6 +129,9 @@ spec:
                   value: "{{revision}}"
               script: |
                 #!/usr/bin/env sh
+                apk update
+                apk add make curl
+
                 curl -X PUT --upload-file ./patchwork-fake-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/provider.token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA/patchwork-fake-signed.sprx
                 curl -X PUT --upload-file ./patchwork-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/provider.token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA/patchwork-signed.sprx
                 curl -X PUT --upload-file ./patchwork.prx --user tekton:`cat $(workspaces.forgejo-token.path)/provider.token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA/patchwork.prx
