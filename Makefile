@@ -1,5 +1,7 @@
 include ./config.mk
 
+.DEFAULT_GOAL := all
+
 SRC_DIR  = src
 OBJ_DIR  = build
 OBJS_DIR = objs
