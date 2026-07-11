@@ -6,4 +6,6 @@ extern char LBP2ScriptHook[];
 extern char LBP3ScriptHook[];
 extern char LBP3JPScriptHook[];
 
+extern char LBP2ForceJoinPatch[];
+
 #endif //SCRIPT_BLOCK_H

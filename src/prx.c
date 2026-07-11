@@ -77,6 +77,8 @@ int start(void)
     uint32_t notification_enable_instr = 0;
     void *rescheck_offset = NULL;
     void *rescheck_hook = NULL;
+    void *forcejoin_patch_offset = NULL;
+    void *forcejoin_patch = NULL;
 
     uint8_t game = 0;
 
@@ -104,6 +106,8 @@ int start(void)
         notification_enable_instr = 0x38000000; // li r0, 0
         rescheck_offset = (void *)LBP2_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP2ScriptHook;
+        forcejoin_patch_offset = (void *)LBP2_FORCEJOIN_PATCH_OFFSET;
+        forcejoin_patch = LBP2ForceJoinPatch;
     }
 
     if (!game && ((char *)LBP3_USER_AGENT_OFFSET)[18]) {
@@ -184,6 +188,9 @@ int start(void)
     if (rescheck_offset && rescheck_hook) {
         uint32_t rescheck_instr = RelativeBranch(rescheck_hook, rescheck_offset);
         memcpy(rescheck_offset, &rescheck_instr, 4);
+    }
+    if (forcejoin_patch_offset && forcejoin_patch) {
+        memcpy(forcejoin_patch_offset, forcejoin_patch, LBP2_FORCEJOIN_PATCH_LENGTH);
     }
 
     // Exit
