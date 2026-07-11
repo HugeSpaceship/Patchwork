@@ -6,6 +6,7 @@
 
 #include "hooks/hooks.h"
 #include "hooks/script-block.h"
+#include "hooks/forcejoin-patch.h"
 #include "tools/util.h"
 #include "tools/fs.h"
 #include "offsets.h"
