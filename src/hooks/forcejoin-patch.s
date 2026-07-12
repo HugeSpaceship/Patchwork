@@ -43,3 +43,43 @@ LBP2ForceJoinPatch:
     b -0x100                            # [0x0285f28]
     ori r0, r0, 0x0                     # !Required! NOP
 # End address : 0x028602c
+
+
+.global LBP3ForceJoinPatch
+LBP3ForceJoinPatch:
+# Start address : 0x030561c
+    cmpwi r28,0x0				        # isLocalPlayerJoining == false
+    bne 0x33		                    # If it's true, skip to success path [0x0286030] 
+    lis r3, 0xf8
+    subic r3, r3, 0x5a80
+    lwz r3, 0x1c(r3)		            # Load CNetworkManager->FriendsManager onto r3
+    or r4, r28, r28		                # Load `source` param onto r4
+    li r5, 0x0
+    bla 0x2eb594			            # Call FindFriendDataEntry()
+    cmpwi r3, 0x0
+    beq 0x1b		                    # Go to failure path if null [0x0305658]
+    lwz r3, 0xf0(r3)		            # Load CFriendData->WeInvitedThisPlayerToJoinUs
+    cmpwi r3, 0x0
+    beq 0xf		                        # Go to failure path if == 0.0 [0x0305658]
+
+    # Success path [0x0286030]
+    li r26, 0x1			                # Set 'skip_checks' to true
+    b 0x8                               # [0x030565c]
+
+    # Failure path [0x0305658]
+    li r26, 0x0			                # Set 'skip_checks' to false
+
+    # Execute func [0x030565c]
+    ori r3, r29, 0x0
+    ori r4, r30, 0x0
+    ori r5, r31, 0x0
+    ori r6, r28, 0x0
+    or r7, r26, r26		                # r7 is the exact value of 'skip_checks' (0x1 = true, 0x0 = false)
+    li r8, 0xd
+    li r9, 0x6
+    bla 0x305090			            # Call `DealWithRequestJoinParty`
+    cmpwi r26, 0x0			            # Is 'skip_checks' set?
+    bne 0x33
+    cmpwi r3, 0x0                       # Begin Checks
+    bne 0x2b
+# End address : 0x0305688

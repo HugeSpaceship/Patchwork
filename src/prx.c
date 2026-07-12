@@ -80,6 +80,7 @@ int start(void)
     void *rescheck_hook = NULL;
     void *forcejoin_patch_offset = NULL;
     void *forcejoin_patch = NULL;
+    uint32_t forcejoin_patch_len = 0;
 
     uint8_t game = 0;
 
@@ -109,6 +110,7 @@ int start(void)
         rescheck_hook = LBP2ScriptHook;
         forcejoin_patch_offset = (void *)LBP2_FORCEJOIN_PATCH_OFFSET;
         forcejoin_patch = LBP2ForceJoinPatch;
+        forcejoin_patch_len = LBP2_FORCEJOIN_PATCH_LENGTH;
     }
 
     if (!game && ((char *)LBP3_USER_AGENT_OFFSET)[18]) {
@@ -125,6 +127,9 @@ int start(void)
         notification_enable_instr = 0x38600000; // li r3, 0
         rescheck_offset = (void *)LBP3_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP3ScriptHook;
+        forcejoin_patch_offset = (void *)LBP3_FORCEJOIN_PATCH_OFFSET;
+        forcejoin_patch = LBP3ForceJoinPatch;
+        forcejoin_patch_len = LBP3_FORCEJOIN_PATCH_LENGTH;
     }
 
     if (!game && ((char *)LBP3_JP_USER_AGENT_OFFSET)[18]) {
@@ -190,8 +195,8 @@ int start(void)
         uint32_t rescheck_instr = RelativeBranch(rescheck_hook, rescheck_offset);
         memcpy(rescheck_offset, &rescheck_instr, 4);
     }
-    if (forcejoin_patch_offset && forcejoin_patch) {
-        memcpy(forcejoin_patch_offset, forcejoin_patch, LBP2_FORCEJOIN_PATCH_LENGTH);
+    if (forcejoin_patch_offset && forcejoin_patch && forcejoin_patch_len) {
+        memcpy(forcejoin_patch_offset, forcejoin_patch, forcejoin_patch_len);
     }
 
     // Exit
