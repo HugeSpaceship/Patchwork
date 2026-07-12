@@ -2,6 +2,31 @@
 #### Forcejoin patches ####
 ###########################
 
+.global LBP1ForceJoinPatch
+LBP1ForceJoinPatch:
+# Start address : 0x03ab70c
+    rlwinm r0, r25, 0x0, 0x18, 0x1f     # Move 'isLocalPlayerJoining' (local) to r0
+    cmpwi cr7, r0, 0x0
+    bne cr7, 0x3b 			            # If isLocalPlayerJoining == true goto success path (auto-accept) [0x03ab74c]
+    
+    lis r3, 0x86
+    ori r3, r3, 0xd930				    # CNetworkManager pointer into r3
+    lwz r3, 0x0(r3)					    # CNetworkManager struct into r3
+    lwz r3, 0x18(r3)				    # CNetworkManager->FriendsManager into r3
+    or r4, r27, r27				        # Load 'source' parameter into r4
+    li r5, 0x0
+    bla 0x128b8c					    # Call FindFriendEntryData()
+    
+    cmpwi cr7, r3, 0x0
+    beq cr7, 0xd3			            # NULL friend entry; goto failure path [0x03ab808]
+    lwz r6, 0x108(r3)				    # Load CFriendData->WeInvitedThisPlayerToJoinUs onto r6
+    cmpwi cr7, r6, 0x0
+    beq cr7, 0xc7			            # If WeInvitedThisPlayerToJoinUs == 0.0, goto failure path [0x03ab808]
+    ori r0, r0, 0x0					    # !Required! NOP
+    # Below is success path
+# End address : 0x03ab748
+
+
 .global LBP2ForceJoinPatch
 LBP2ForceJoinPatch:
 # Start address : 0x0285fb8

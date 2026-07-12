@@ -94,6 +94,9 @@ int start(void)
         digest_offset = (void *)LBP1_DIGEST_OFFSET;
         rescheck_offset = (void *)LBP1_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP1ScriptHook;
+        forcejoin_patch_offset = (void *)LBP1_FORCEJOIN_PATCH_OFFSET;
+        forcejoin_patch = LBP1ForceJoinPatch;
+        forcejoin_patch_len = LBP1_FORCEJOIN_PATCH_LENGTH;
     }
 
     if (!game && ((char *)LBP2_USER_AGENT_OFFSET)[18] == '2') {
