@@ -149,6 +149,9 @@ int start(void)
         // notification_enable_instr = 0x38600000;
         rescheck_offset = (void *)LBP3_JP_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP3JPScriptHook;
+        forcejoin_patch_offset = (void *)LBP3_JP_FORCEJOIN_PATCH_OFFSET;
+        forcejoin_patch = LBP3JPForceJoinPatch;
+        forcejoin_patch_len = LBP3_JP_FORCEJOIN_PATCH_LENGTH;
     }
 
     if (!game) {

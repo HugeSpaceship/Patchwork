@@ -78,7 +78,7 @@ LBP3ForceJoinPatch:
     lis r3, 0xf8
     subic r3, r3, 0x5a80
     lwz r3, 0x1c(r3)		            # Load CNetworkManager->FriendsManager onto r3
-    or r4, r28, r28		                # Load `source` param onto r4
+    or r4, r31, r31		                # Load `source` param onto r4
     li r5, 0x0
     bla 0x2eb594			            # Call FindFriendDataEntry()
     cmpwi r3, 0x0
@@ -108,3 +108,43 @@ LBP3ForceJoinPatch:
     cmpwi r3, 0x0                       # Begin Checks
     bne 0x2b
 # End address : 0x0305688
+
+
+.global LBP3JPForceJoinPatch
+LBP3JPForceJoinPatch:
+# Start address : 0x0301e34
+    cmpwi r28,0x0				        # isLocalPlayerJoining == false
+    bne 0x33		                    # If it's true, skip to success path [0x0301e68] 
+    lis r3, 0xf6
+    subic r3, r3, 0x6000
+    lwz r3, 0x1c(r3)		            # Load CNetworkManager->FriendsManager onto r3
+    or r4, r31, r31		                # Load `source` param onto r4
+    li r5, 0x0
+    bla 0x2e821c			            # Call FindFriendDataEntry()
+    cmpwi r3, 0x0
+    beq 0x1b		                    # Go to failure path if null [0x0301e70]
+    lwz r3, 0xf0(r3)		            # Load CFriendData->WeInvitedThisPlayerToJoinUs
+    cmpwi r3, 0x0
+    beq 0xf		                        # Go to failure path if == 0.0 [0x0301e70]
+
+    # Success path [0x0301e68]
+    li r26, 0x1			                # Set 'skip_checks' to true
+    b 0x8                               # [0x0301e74]
+
+    # Failure path [0x0301e70]
+    li r26, 0x0			                # Set 'skip_checks' to false
+
+    # Execute func [0x0301e74]
+    ori r3, r29, 0x0
+    ori r4, r30, 0x0
+    ori r5, r31, 0x0
+    ori r6, r28, 0x0
+    or r7, r26, r26		                # r7 is the exact value of 'skip_checks' (0x1 = true, 0x0 = false)
+    li r8, 0xd
+    li r9, 0x6
+    bla 0x3018a8			            # Call `DealWithRequestJoinParty`
+    cmpwi r26, 0x0			            # Is 'skip_checks' set?
+    bne 0x33
+    cmpwi r3, 0x0                       # Begin Checks
+    bne 0x2b
+# End address : 0x0301ea0
