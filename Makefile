@@ -1,5 +1,7 @@
 include ./config.mk
 
+.DEFAULT_GOAL := all
+
 SRC_DIR  = src
 OBJ_DIR  = build
 OBJS_DIR = objs
@@ -40,6 +42,9 @@ $(OBJS_DIR)/%.ppu.o: %.c
 $(OBJS_DIR)/%.ppu.o: %.s
 	@mkdir -p $(dir $@)
 	$(AS) -mregnames -o $@ $<
+
+print-version:
+	$(info ${PATCHWORK_VERSION_MAJOR}.${PATCHWORK_VERSION_MINOR})
 
 all: $(SPRX_TARGET) $(FSPRX_TARGET)
 
