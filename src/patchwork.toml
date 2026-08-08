@@ -7,4 +7,4 @@ enable_join_key = true
 
 [updates]
 enable_updates = true
-update_server = "http://10.0.0.1:8000/patchwork.sprx"
+update_server = "http://10.0.0.1:8000/update"

@@ -4,6 +4,8 @@
 #define STR1(x)  #x
 #define STR(x)  STR1(x)
 
+#define BUILD_VERSION = __DATE__ ""
+
 #define MAIN_CONFIG_PATH "/dev_hdd0/plugins/patchwork/patchwork.toml"
 #define CONFIG_SECTION_MAIN "patchwork"
 #define CONFIG_SECTION_UPDATES "updates"

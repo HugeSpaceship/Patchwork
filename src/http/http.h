@@ -5,6 +5,7 @@
 
 #include <cell/http.h>
 #include <cell/cell_fs.h>
+#include <cell/hash/libsha256.h>
 
 #define TRANSACTION_POOL_SIZE 32
 
@@ -32,6 +33,6 @@ HttpTransaction HttpTransaction_ctor(HttpContext *ctx, char *uri_string, const c
 void HttpTransaction_dtor(HttpTransaction *trans);
 void HttpTransactionSendRequest(HttpTransaction *trans);
 
-int HttpDownloadFile(HttpContext *ctx, HttpTransaction *trans, const char *path);
+int HttpDownloadFile(HttpContext *ctx, HttpTransaction *trans, const char *path, void *hash_buf);
 
 #endif //HTTP_H

@@ -8,6 +8,7 @@
 #include <sysutil/sysutil_msgdialog.h>
 
 #define ERROR_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_DIALOG_TYPE_ERROR | CELL_MSGDIALOG_TYPE_SE_MUTE_OFF | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL);
+#define OPTION_DIALOG(text, callback) cellMsgDialogOpen2(CELL_MSGDIALOG_BUTTON_TYPE_YESNO, text, callback, NULL, NULL)
 
 static inline char *TrimEnd(char *str) {
     if (str == NULL) return NULL;

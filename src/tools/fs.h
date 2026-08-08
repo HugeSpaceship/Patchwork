@@ -6,5 +6,6 @@
 
 int ReadFile(const char *path, char *buf, int buf_size);
 void WriteFile(const char *path, const void *buf, const uint64_t size);
+int CopyFile(const char *src, const char *dst);
 
 #endif //FS_H

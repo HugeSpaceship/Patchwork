@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/prx.h>
+#include <sys/process.h>
 #include <sys/sys_time.h>
 #include <sys/memory.h>
 
@@ -34,9 +35,6 @@ int start(void)
     cellSysmoduleLoadModule(CELL_SYSMODULE_NET);
     cellSysmoduleLoadModule(CELL_SYSMODULE_HTTP);
 
-    char user_agent[32];
-    strcpy(user_agent, USER_AGENT);
-
     char toml_buf[312];
     ReadFile(MAIN_CONFIG_PATH, toml_buf, 312);
 
@@ -68,11 +66,17 @@ int start(void)
             sys_addr_t http_pool = NULL;
             sys_memory_allocate(SIZE_64K, SYS_MEMORY_PAGE_SIZE_64K, &http_pool);
 
-            DownloadUpdate((void *)http_pool, SIZE_64K, update_server_url);
+            int err = DownloadUpdate((void *)http_pool, SIZE_64K, update_server_url);
+            if (err == 1) {
+                InstallUpdate("/dev_hdd0/plugins/patchwork.sprx");
+                OPTION_DIALOG("Patchwork has updated, would you like to exit now?", ExitDialogCallback);
+            }
 
             sys_memory_free(http_pool);
 
             sys_net_finalize_network();
+        } else {
+            println("network not initialized\n");
         }
     }
 
@@ -101,6 +105,8 @@ int start(void)
     // Init patch generics
     void *network_key_offset = NULL;
     void *user_agent_offset = NULL;
+    char user_agent[32];
+    strcpy(user_agent, USER_AGENT);
     void *https_url_offset = NULL;
     void *http_url_offset = NULL;
     void *digest_offset = NULL;
@@ -170,7 +176,7 @@ int start(void)
         rescheck_offset = (void *)LBP3_JP_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP3JPScriptHook;
     }
-
+    
     char game_num_str[4];
     UIntToStr(game_num_str, 4, game, 10);
     ReplaceNext(user_agent, 'X', *game_num_str);
