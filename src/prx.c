@@ -123,7 +123,6 @@ int start(void)
 
     if (!game && ((char *)LBP1_USER_AGENT_OFFSET)[15] == '$') {
         game = GAME_LBP1;
-        ReplaceNext(user_agent, 'X', '1');
         network_key_offset = (void *)LBP1_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP1_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP1_HTTPS_URL_OFFSET;
@@ -138,7 +137,6 @@ int start(void)
 
     if (!game && ((char *)LBP2_USER_AGENT_OFFSET)[18] == '2') {
         game = GAME_LBP2;
-        ReplaceNext(user_agent, 'X', '7');
         network_key_offset = (void *)LBP2_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP2_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP2_HTTPS_URL_OFFSET;
@@ -155,7 +153,6 @@ int start(void)
 
     if (!game && ((char *)LBP3_USER_AGENT_OFFSET)[18]) {
         game = GAME_LBP3;
-        ReplaceNext(user_agent, 'X', '3');
         network_key_offset = (void *)LBP3_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP3_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP3_HTTPS_URL_OFFSET;
@@ -174,7 +171,6 @@ int start(void)
 
     if (!game && ((char *)LBP3_JP_USER_AGENT_OFFSET)[18]) {
         game = GAME_LBP3_JP;
-        
         network_key_offset = (void *)LBP3_JP_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP3_JP_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP3_JP_HTTPS_URL_OFFSET;
@@ -190,14 +186,14 @@ int start(void)
         forcejoin_patch = LBP3JPForceJoinPatch;
         forcejoin_patch_len = LBP3_JP_FORCEJOIN_PATCH_LENGTH;
     }
-    
-    char game_num_str[4];
-    UIntToStr(game_num_str, 4, game, 10);
-    ReplaceNext(user_agent, 'X', *game_num_str);
 
     if (!game) {
         ERROR_DIALOG("Failed to detect game, your online is not safe!");
     } else {
+        char game_num_str[4];
+        UIntToStr(game_num_str, 4, game, 10);
+        ReplaceNext(user_agent, 'X', *game_num_str);
+        
         char *msg_buf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
 
         if (enable_join_key) {
