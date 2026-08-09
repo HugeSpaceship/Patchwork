@@ -30,7 +30,7 @@ Additional features include being able to patch the game's server URL and digest
 > [!NOTE]
 > All known major security vulnerabilities are addressed by Patchwork.
 
-If you identify new vulnerabilities, please [Open an Issue](https://github.com/HugeSpaceship/Patchwork/issues/new/choose).
+If you identify new vulnerabilities, please [Report an Advisory](https://github.com/HugeSpaceship/Patchwork/security/advisories/new).
 
 ## Building
 
