@@ -21,6 +21,7 @@
 
 // Header code is ugly, can be cleaned up if we had a heap allocator
 // return 0 for failiure or if we are up to date, 1 if we downloaded a new update
+// TODO: We need some kind of logging that can send stuff to stdout and a log file
 static int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
     int err = 0;
 
@@ -43,7 +44,6 @@ static int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
     if (trans.err < 0) {
         HttpTransaction_dtor(&trans);
         HttpContext_dtor(&ctx);
-        println("request failed\n");
         return 0; // Request wasnt sent, immediately fail
     }
 
@@ -53,7 +53,7 @@ static int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
     // Initial pass to get buffer size, this is dumb but sony said so
     trans.err = cellHttpResponseGetHeader(trans.trans_id, NULL, HEADER_SPRX_HASH, NULL, NULL, &required);
     if (trans.err < 0) {
-        println("could not get required buffer size\n");
+        err = 0;
     }
 
     char header_pool[required];
@@ -67,7 +67,7 @@ static int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
     );
 
     if (trans.err < 0) {
-        println("could not get get header\n");
+        err = 0;
     }
 
     if (trans.status_code == 204) {
@@ -80,16 +80,15 @@ static int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
 
         uint32_t *hash = (uint32_t *)hash_buf;
 
+        // Compare string hash provided by server to raw digest in `hash_buf`
         for (int i = 0; i < 32; i++) {
             uint8_t server_byte =
                 StrToInt(hash_header.value + (i * 2), 2, 16);
             if (server_byte != hash_buf[i]) {
-                println("hash mismatch\n");
                 err = 0;
                 break;
             }
             if (i == 31) {
-                println("hash matches\n");
                 err = 1;
             }
         }

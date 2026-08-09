@@ -75,8 +75,6 @@ int start(void)
             sys_memory_free(http_pool);
 
             sys_net_finalize_network();
-        } else {
-            println("network not initialized\n");
         }
     }
 
