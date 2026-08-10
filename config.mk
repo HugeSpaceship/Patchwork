@@ -18,4 +18,4 @@ CFLAGS = -std=c99 -Wall -I./src
 CFLAGS += -DPATCHWORK_VERSION_MAJOR=$(PATCHWORK_VERSION_MAJOR) -DPATCHWORK_VERSION_MINOR=$(PATCHWORK_VERSION_MINOR)
 
 # Put your PS3's local IP here to use the install/run targets on the Makefile
-PS3_IP ?= 192.168.178.253
+PS3_IP ?= 192.168.0.123
