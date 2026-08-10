@@ -6,6 +6,7 @@
 
 #include "hooks/hooks.h"
 #include "hooks/script-block.h"
+#include "hooks/forcejoin-patch.h"
 #include "tools/util.h"
 #include "tools/fs.h"
 #include "offsets.h"
@@ -77,6 +78,9 @@ int start(void)
     uint32_t notification_enable_instr = 0;
     void *rescheck_offset = NULL;
     void *rescheck_hook = NULL;
+    void *forcejoin_patch_offset = NULL;
+    void *forcejoin_patch = NULL;
+    uint32_t forcejoin_patch_len = 0;
 
     uint8_t game = 0;
 
@@ -90,6 +94,9 @@ int start(void)
         digest_offset = (void *)LBP1_DIGEST_OFFSET;
         rescheck_offset = (void *)LBP1_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP1ScriptHook;
+        forcejoin_patch_offset = (void *)LBP1_FORCEJOIN_PATCH_OFFSET;
+        forcejoin_patch = LBP1ForceJoinPatch;
+        forcejoin_patch_len = LBP1_FORCEJOIN_PATCH_LENGTH;
     }
 
     if (!game && ((char *)LBP2_USER_AGENT_OFFSET)[18] == '2') {
@@ -104,6 +111,9 @@ int start(void)
         notification_enable_instr = 0x38000000; // li r0, 0
         rescheck_offset = (void *)LBP2_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP2ScriptHook;
+        forcejoin_patch_offset = (void *)LBP2_FORCEJOIN_PATCH_OFFSET;
+        forcejoin_patch = LBP2ForceJoinPatch;
+        forcejoin_patch_len = LBP2_FORCEJOIN_PATCH_LENGTH;
     }
 
     if (!game && ((char *)LBP3_USER_AGENT_OFFSET)[18]) {
@@ -120,6 +130,9 @@ int start(void)
         notification_enable_instr = 0x38600000; // li r3, 0
         rescheck_offset = (void *)LBP3_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP3ScriptHook;
+        forcejoin_patch_offset = (void *)LBP3_FORCEJOIN_PATCH_OFFSET;
+        forcejoin_patch = LBP3ForceJoinPatch;
+        forcejoin_patch_len = LBP3_FORCEJOIN_PATCH_LENGTH;
     }
 
     if (!game && ((char *)LBP3_JP_USER_AGENT_OFFSET)[18]) {
@@ -136,6 +149,9 @@ int start(void)
         // notification_enable_instr = 0x38600000;
         rescheck_offset = (void *)LBP3_JP_RESOURCE_CHECK_OFFSET;
         rescheck_hook = LBP3JPScriptHook;
+        forcejoin_patch_offset = (void *)LBP3_JP_FORCEJOIN_PATCH_OFFSET;
+        forcejoin_patch = LBP3JPForceJoinPatch;
+        forcejoin_patch_len = LBP3_JP_FORCEJOIN_PATCH_LENGTH;
     }
 
     if (!game) {
@@ -184,6 +200,9 @@ int start(void)
     if (rescheck_offset && rescheck_hook) {
         uint32_t rescheck_instr = RelativeBranch(rescheck_hook, rescheck_offset);
         memcpy(rescheck_offset, &rescheck_instr, 4);
+    }
+    if (forcejoin_patch_offset && forcejoin_patch && forcejoin_patch_len) {
+        memcpy(forcejoin_patch_offset, forcejoin_patch, forcejoin_patch_len);
     }
 
     // Exit
