@@ -1,15 +1,23 @@
+#include <stdint.h>
+#include <string.h>
 #include <sys/prx.h>
+#include <sys/process.h>
 #include <sys/sys_time.h>
+#include <sys/memory.h>
 
 #include <cell/hash/libsha256.h>
 #include <cell/sysmodule.h>
+#include <cell/http.h>
+#include <netex/net.h>
 
 #include "hooks/hooks.h"
 #include "hooks/script-block.h"
+#include "toml/helper.h"
 #include "hooks/forcejoin-patch.h"
 #include "tools/util.h"
 #include "tools/fs.h"
 #include "offsets.h"
+#include "update.h"
 #include "globals.h"
 
 #include "toml/toml.h"
@@ -19,31 +27,60 @@
 SYS_MODULE_INFO(PatchworkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
 
+#define USER_AGENT "PatchworkLBPX " STR(PATCHWORK_VERSION_MAJOR) "." STR(PATCHWORK_VERSION_MINOR)
+
 int start(void);
 int start(void)
 {
     cellSysmoduleLoadModule(CELL_SYSMODULE_FS);
+    cellSysmoduleLoadModule(CELL_SYSMODULE_NET);
+    cellSysmoduleLoadModule(CELL_SYSMODULE_HTTP);
 
-    char toml_buf[256];
-    ReadFile(MAIN_CONFIG_PATH, toml_buf, 256);
+    char toml_buf[312];
+    ReadFile(MAIN_CONFIG_PATH, toml_buf, 312);
 
     Lexer l = MakeLexer(toml_buf);
-    TOMLEntry entries[4];
-    TOMLReadBuffer(&l, entries, 4);
+    TOMLEntry entries[CONFIG_ENTRY_COUNT];
+    TOMLReadBuffer(&l, entries, CONFIG_ENTRY_COUNT);
 
     char *server_url = NULL;
     char *join_key = NULL;
     char *digest_key = NULL;
     int enable_join_key = 1;
 
+    char *update_server_url = NULL;
+    int enable_updates = 1;
+
     TOMLKeyMap key_map[] = {
-        {MAIN_CONFIG_SECTION, "server_url", TOML_TYPE_STRING, &server_url},
-        {MAIN_CONFIG_SECTION, "join_key", TOML_TYPE_STRING, &join_key},
-        {MAIN_CONFIG_SECTION, "digest_key", TOML_TYPE_STRING, &digest_key},
-        {MAIN_CONFIG_SECTION, "enable_join_key", TOML_TYPE_BOOL, &enable_join_key},
+        {CONFIG_SECTION_MAIN, "server_url", TOML_TYPE_STRING, &server_url},
+        {CONFIG_SECTION_MAIN, "join_key", TOML_TYPE_STRING, &join_key},
+        {CONFIG_SECTION_MAIN, "digest_key", TOML_TYPE_STRING, &digest_key},
+        {CONFIG_SECTION_MAIN, "enable_join_key", TOML_TYPE_BOOL, &enable_join_key},
+        {CONFIG_SECTION_UPDATES, "update_server", TOML_TYPE_STRING, &update_server_url},
+        {CONFIG_SECTION_UPDATES, "enable_updates", TOML_TYPE_BOOL, &enable_updates},
     };
 
-    TOMLApplyEntriesToKeyMap(entries, 4, key_map, 4);
+    TOMLApplyEntriesToKeyMap(entries, CONFIG_ENTRY_COUNT, key_map, CONFIG_ENTRY_COUNT);
+
+    if (enable_updates && update_server_url) {
+        if (sys_net_initialize_network() == 0) {
+            sys_addr_t http_pool = NULL;
+            sys_memory_allocate(SIZE_64K, SYS_MEMORY_PAGE_SIZE_64K, &http_pool);
+
+            int err = DownloadUpdate((void *)http_pool, SIZE_64K, update_server_url);
+            if (err == 1) {
+                InstallUpdate("/dev_hdd0/plugins/patchwork.sprx");
+                OPTION_DIALOG("Patchwork has updated, would you like to exit now?", ExitDialogCallback);
+            }
+
+            sys_memory_free(http_pool);
+
+            sys_net_finalize_network();
+        }
+    }
+
+    cellSysmoduleUnloadModule(CELL_SYSMODULE_HTTP);
+    cellSysmoduleUnloadModule(CELL_SYSMODULE_NET);
 
     unsigned char xxtea_key[32];
     int join_key_randomized = 1;
@@ -64,11 +101,11 @@ int start(void)
         }
     }
 
-    char *user_agent;
-
     // Init patch generics
     void *network_key_offset = NULL;
     void *user_agent_offset = NULL;
+    char user_agent[32];
+    strcpy(user_agent, USER_AGENT);
     void *https_url_offset = NULL;
     void *http_url_offset = NULL;
     void *digest_offset = NULL;
@@ -86,7 +123,6 @@ int start(void)
 
     if (!game && ((char *)LBP1_USER_AGENT_OFFSET)[15] == '$') {
         game = GAME_LBP1;
-        user_agent = "PatchworkLBP1 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
         network_key_offset = (void *)LBP1_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP1_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP1_HTTPS_URL_OFFSET;
@@ -101,7 +137,6 @@ int start(void)
 
     if (!game && ((char *)LBP2_USER_AGENT_OFFSET)[18] == '2') {
         game = GAME_LBP2;
-        user_agent = "PatchworkLBP2 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
         network_key_offset = (void *)LBP2_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP2_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP2_HTTPS_URL_OFFSET;
@@ -118,7 +153,6 @@ int start(void)
 
     if (!game && ((char *)LBP3_USER_AGENT_OFFSET)[18]) {
         game = GAME_LBP3;
-        user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
         network_key_offset = (void *)LBP3_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP3_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP3_HTTPS_URL_OFFSET;
@@ -137,7 +171,6 @@ int start(void)
 
     if (!game && ((char *)LBP3_JP_USER_AGENT_OFFSET)[18]) {
         game = GAME_LBP3_JP;
-        user_agent = "PatchworkLBP3 "STR(PATCHWORK_VERSION_MAJOR)"."STR(PATCHWORK_VERSION_MINOR);
         network_key_offset = (void *)LBP3_JP_NETWORK_KEY_OFFSET;
         user_agent_offset = (void *)LBP3_JP_USER_AGENT_OFFSET;
         https_url_offset = (void *)LBP3_JP_HTTPS_URL_OFFSET;
@@ -157,19 +190,24 @@ int start(void)
     if (!game) {
         ERROR_DIALOG("Failed to detect game, your online is not safe!");
     } else {
-        char *msgBuf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
+        char game_num_str[4];
+        UIntToStr(game_num_str, 4, game, 10);
+        ReplaceNext(user_agent, 'X', *game_num_str);
+        
+        char *msg_buf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
 
         if (enable_join_key) {
             if (!join_key_randomized) {
-                strcpy(msgBuf, SUCCESS_MESSAGE_WITH_PW);
+                strcpy(msg_buf, SUCCESS_MESSAGE_WITH_PW);
             } else {
-                strcpy(msgBuf, SUCCESS_MESSAGE_RANDOM_PW);
+                strcpy(msg_buf, SUCCESS_MESSAGE_RANDOM_PW);
             }
         } else {
-            strcpy(msgBuf, SUCCESS_MESSAGE_WITHOUT_PW);
+            strcpy(msg_buf, SUCCESS_MESSAGE_WITHOUT_PW);
         }
 
-        WriteFile("/dev_hdd0/tmp/wm_request", msgBuf, strlen(msgBuf));
+        ReplaceNext(msg_buf, 'X', *game_num_str);
+        WriteFile("/dev_hdd0/tmp/wm_request", msg_buf, strlen(msg_buf));
     }
 
     size_t url_len = 0;
@@ -206,8 +244,6 @@ int start(void)
     }
 
     // Exit
-
-    cellSysmoduleUnloadModule(CELL_SYSMODULE_FS);
 
     return SYS_PRX_NO_RESIDENT;
 }
