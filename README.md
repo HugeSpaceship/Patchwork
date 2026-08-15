@@ -9,22 +9,28 @@ to fix some of the many security vulnerabilities the games have.
 
 ## Current Fixes
 
-Currently, the only fix is changing the XXTea encryption key used for network packets,
-this fixes the force-join exploit by making it impossible to join/be joined by a player
-without having the same lobby password. Additionally it allows you to patch
-the game's URL, and digest key.
+1. **Disabling P2P script syncing**  
+
+   Removes remote script downloading between clients;  
+   patching the ability to send malicious scripts to joined players.
+ 
+2. **Join Request verification**  
+
+   Improves logic around the handling of join requests;  
+   patching force-join by disallowing auto-join for those not explicitly invited.
+
+3. **Custom XXTea key for packets** (Optional)  
+
+   Sets a custom key used to encrypt network packets;  
+   prevents anyone without the same key from being able to join/be joined by others.
+
+Additional features include being able to patch the game's server URL and digest key.
 
 ## Future Fixes
+> [!NOTE]
+> All known major security vulnerabilities are addressed by Patchwork.
 
-The ideal patches for something like this are as follows:
-
-1. A real fix for force-join, this could come in the form of 
-   validating a list of users that have had invites sent to them,
-   and rejecting all users not on that list.
-
-2. A fix for P2P script syncing, as this is the biggest threat to the online security
-   of LittleBigPlanet
-    
+If you identify new vulnerabilities, please follow the steps in [SECURITY.MD](/SECURITY.MD) or [Report an Advisory](https://github.com/HugeSpaceship/Patchwork/security/advisories/new).
 
 ## Building
 
@@ -55,9 +61,6 @@ Generally, this location should be `/dev_hdd0/plugins/patchwork.sprx` but you ca
 
 Optionally, put a `patchwork_lobby_password.txt` in `/dev_hdd0/tmp` if you'd like to play with friends.
 You can also use `patchwork_url.txt` and `patchwork_digest.txt` to patch to a custom server of your choice.
-
-If you don't specify a password file, the library will randomly generate a random password on boot to ensure safety 
-(effectively disabling multiplayer).
 
 ## Credits
 
