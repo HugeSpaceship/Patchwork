@@ -4,9 +4,9 @@ kind: PipelineRun
 metadata:
   name: patchwork-build
   annotations:
-    pipelinesascode.tekton.dev/max-keep-runs: "2"
+    pipelinesascode.tekton.dev/max-keep-runs: "8"
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
-    pipelinesascode.tekton.dev/on-event: "push"
+    pipelinesascode.tekton.dev/on-event: "pull-request"
     pipelinesascode.tekton.dev/on-target-branch: "main"
     pipelinesascode.tekton.dev/on-path-change: "[Makefile, config.mk, src/***, .tekton/patchwork-build.yaml, patch-generator/***, lbpdefs/*, go.mod, go.sum]"
 spec:
@@ -136,8 +136,8 @@ spec:
                 curl -X PUT --upload-file ./patchwork-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA-$BUILD_ID/patchwork-signed.sprx
                 curl -X PUT --upload-file ./patchwork.prx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA-$BUILD_ID/patchwork.prx
                 curl -X PUT --upload-file ./patchwork-rpcs3-patch.yml --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/`make -q print-version`-$COMMIT_SHA-$BUILD_ID/patchwork-rpcs3-patch.yml
-      
 
+                
       - name: cleanup
         runAfter:
           - upload-artifacts
@@ -155,14 +155,6 @@ spec:
     workspaces:
       - name: source
   workspaces:
-    - name: gocache
-      volumeClaimTemplate:
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 4Gi
     - name: source
       volumeClaimTemplate:
         spec:
