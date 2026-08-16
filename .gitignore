@@ -15,3 +15,6 @@ data/
 
 # MacOS Garbage
 .DS_Store
+
+# EVIL JETBRAINS
+.idea
