@@ -10,8 +10,6 @@ metadata:
     pipelinesascode.tekton.dev/on-target-branch: "main"
     pipelinesascode.tekton.dev/on-path-change: "[Makefile, config.mk, src/***, .tekton/patchwork-build.yaml, patch-generator/***, lbpdefs/*, go.mod, go.sum]"
 spec:
-  settings:
-    pipelinerun_provenance: "default_branch"
   params:
     - name: repo_url
       value: "{{repo_url}}"
