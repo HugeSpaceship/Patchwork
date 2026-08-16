@@ -78,8 +78,6 @@ static int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
         unsigned char hash_buf[CELL_SHA256_DIGEST_SIZE];
         HttpDownloadFile(&ctx, &trans, DOWNLOAD_PATH, hash_buf);
 
-        uint32_t *hash = (uint32_t *)hash_buf;
-
         // Compare string hash provided by server to raw digest in `hash_buf`
         for (int i = 0; i < 32; i++) {
             uint8_t server_byte =
