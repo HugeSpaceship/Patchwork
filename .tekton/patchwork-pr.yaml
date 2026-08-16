@@ -6,7 +6,7 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "8"
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
-    pipelinesascode.tekton.dev/on-event: "pull-request"
+    pipelinesascode.tekton.dev/on-event: "pull_request"
     pipelinesascode.tekton.dev/on-target-branch: "main"
 # This doesn't seem to work
 #    pipelinesascode.tekton.dev/on-path-change: "[Makefile, config.mk, src/***, patch-generator/***, lbpdefs/*, go.mod, go.sum]"
