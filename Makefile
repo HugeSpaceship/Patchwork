@@ -11,12 +11,16 @@ SRC_DIRS = \
 	$(SRC_DIR)/tools \
 	$(SRC_DIR)/hooks \
 	$(SRC_DIR)/toml \
+	$(SRC_DIR)/http \
 
 PRX_TARGET = patchwork.prx
 
 PPU_LIBS = \
 	$(CELL_TARGET_PATH)/ppu/lib/fno-exceptions/fno-rtti/libc.a \
-	$(CELL_TARGET_PATH)/ppu/lib/hash/libsha256.a
+	$(CELL_TARGET_PATH)/ppu/lib/hash/libsha256.a \
+	$(CELL_TARGET_PATH)/ppu/lib/libhttp_util_stub.a \
+	$(CELL_TARGET_PATH)/ppu/lib/libhttp_stub.a \
+	$(CELL_TARGET_PATH)/ppu/lib/libnet_stub.a \
 
 PPU_PRX_LDFLAGS = -zgenprx -zgenstub -lio_stub -lfs_stub \
 	-lsysutil_stub -lsysmodule_stub -Wl,--strip-unused-data
