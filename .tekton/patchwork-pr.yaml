@@ -8,7 +8,8 @@ metadata:
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
     pipelinesascode.tekton.dev/on-event: "pull-request"
     pipelinesascode.tekton.dev/on-target-branch: "main"
-    pipelinesascode.tekton.dev/on-path-change: "[Makefile, config.mk, src/***, patch-generator/***, lbpdefs/*, go.mod, go.sum]"
+# This doesn't seem to work
+#    pipelinesascode.tekton.dev/on-path-change: "[Makefile, config.mk, src/***, patch-generator/***, lbpdefs/*, go.mod, go.sum]"
 spec:
   params:
     - name: repo_url
