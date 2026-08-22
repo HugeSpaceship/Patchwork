@@ -29,9 +29,16 @@ SYS_MODULE_START(start);
 
 #define USER_AGENT "PatchworkLBPX " STR(PATCHWORK_VERSION_MAJOR) "." STR(PATCHWORK_VERSION_MINOR)
 
-int start(void);
-int start(void)
+int start(size_t args, void *argp);
+int start(size_t args, void *argp)
 {
+    int dont_update = 0;
+    if (args == 1) {
+        println("started by updater");
+        INFO_DIALOG("Patchwork has been updated to version " STR(PATCHWORK_VERSION_MAJOR) "." STR(PATCHWORK_VERSION_MINOR));
+        dont_update = 1;
+        sys_prx_unload_module(*(sys_prx_id_t*)argp, 0, NULL);
+    }
     cellSysmoduleLoadModule(CELL_SYSMODULE_FS);
     cellSysmoduleLoadModule(CELL_SYSMODULE_NET);
     cellSysmoduleLoadModule(CELL_SYSMODULE_HTTP);
@@ -62,7 +69,7 @@ int start(void)
 
     TOMLApplyEntriesToKeyMap(entries, CONFIG_ENTRY_COUNT, key_map, CONFIG_ENTRY_COUNT);
 
-    if (enable_updates && update_server_url) {
+    if (enable_updates && update_server_url && !dont_update) {
         if (sys_net_initialize_network() == 0) {
             sys_addr_t http_pool = NULL;
             sys_memory_allocate(SIZE_64K, SYS_MEMORY_PAGE_SIZE_64K, &http_pool);
@@ -70,7 +77,29 @@ int start(void)
             int err = DownloadUpdate((void *)http_pool, SIZE_64K, update_server_url);
             if (err == 1) {
                 InstallUpdate("/dev_hdd0/plugins/patchwork.sprx");
-                OPTION_DIALOG("Patchwork has updated, would you like to exit now?", ExitDialogCallback);
+                sys_prx_id_t my_id = sys_prx_get_my_module_id();
+                sys_prx_id_t new_prx_id = sys_prx_load_module(INSTALL_PATH, 0, NULL);
+
+                int returnThatWeDontCareAbout = 0;
+                println("starting module");
+                int ret = sys_prx_start_module(new_prx_id, 1, &my_id, &returnThatWeDontCareAbout, 0, NULL);
+                if (ret < CELL_OK) {
+                    ERROR_DIALOG("Failed to start patchwork");
+                }
+
+                sys_memory_free(http_pool);
+
+                sys_net_finalize_network();
+                cellSysmoduleUnloadModule(CELL_SYSMODULE_HTTP);
+                cellSysmoduleUnloadModule(CELL_SYSMODULE_NET);
+
+                return SYS_PRX_NO_RESIDENT;
+            }
+            if (err == 2) {
+                ERROR_DIALOG("Failed to update patchwork");
+            }
+            if (err == 0) {
+                println("no patchwork update available");
             }
 
             sys_memory_free(http_pool);
