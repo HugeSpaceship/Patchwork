@@ -134,15 +134,17 @@ spec:
 
                 if [ "{{git_tag}}" != "" ]
                 then
+                  PACKAGE="patchwork"
                   VERSION="`make -q print-version`-{{git_tag}}"
                 else
-                  VERSION="`make -q print-version`-nightly-$COMMIT_SHA-$BUILD_ID"
+                  PACKAGE="patchwork-nightly"
+                  VERSION="`make -q print-version`-nightly-$COMMIT_SHA"
                 fi
-                curl -X PUT --upload-file ./patchwork-fake-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/$VERSION/patchwork-fake-signed.sprx
-                curl -X PUT --upload-file ./patchwork-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/$VERSION/patchwork-signed.sprx
-                curl -X PUT --upload-file ./patchwork.prx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/$VERSION/patchwork.prx
-                curl -X PUT --upload-file ./patchwork-rpcs3-patch.yml --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/$VERSION/patchwork-rpcs3-patch.yml
-      
+                curl -X PUT --upload-file ./patchwork-fake-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork-fake-signed.sprx
+                curl -X PUT --upload-file ./patchwork-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork-signed.sprx
+                curl -X PUT --upload-file ./patchwork.prx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork.prx
+                curl -X PUT --upload-file ./patchwork-rpcs3-patch.yml --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork-rpcs3-patch.yml
+                echo "Artifacts are available for this build at: https://git.valtek.uk/HugeSpaceship/-/packages/generic/$PACKAGE/$VERSION"
       - name: cleanup
         runAfter:
           - upload-artifacts

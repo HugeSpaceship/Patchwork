@@ -138,7 +138,7 @@ spec:
                 curl -X PUT --upload-file ./patchwork.prx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork-pr/`make -q print-version`-$COMMIT_SHA-$BUILD_ID/patchwork.prx
                 curl -X PUT --upload-file ./patchwork-rpcs3-patch.yml --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork-pr/`make -q print-version`-$COMMIT_SHA-$BUILD_ID/patchwork-rpcs3-patch.yml
 
-                
+                echo "Artifacts are available for this build at: https://git.valtek.uk/HugeSpaceship/-/packages/generic/patchwork-pr/`make -q print-version`-$COMMIT_SHA-$BUILD_ID"
       - name: cleanup
         runAfter:
           - upload-artifacts
