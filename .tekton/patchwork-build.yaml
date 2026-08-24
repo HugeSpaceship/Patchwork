@@ -8,7 +8,7 @@ metadata:
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
     pipelinesascode.tekton.dev/on-event: "push"
     pipelinesascode.tekton.dev/on-target-branch: "[refs/heads/main, refs/tags/*]"
-    pipelinesascode.tekton.dev/on-path-change: "[Makefile, config.mk, src/***, .tekton/patchwork-build.yaml, patch-generator/***, lbpdefs/*, go.mod, go.sum]"
+    pipelinesascode.tekton.dev/on-path-change: "[Makefile, config.mk, src/***, .tekton/patchwork-build.yaml, tools/***, lbpdefs/*, go.mod, go.sum]"
 spec:
   params:
     - name: repo_url
@@ -89,8 +89,8 @@ spec:
                 #!/usr/bin/env bash
                 set -euo pipefail
                 git config --global --add safe.directory $(workspaces.source.path)
-                go get ./tools/patch_generator/cmd/patch_generator
-                go build -o patchgen ./tools/patch_generator/cmd/patch_generator
+                go get ./patch-generator
+                go build -o patchgen ./patch-generator
       - name: patch-generate
         runAfter:
           - go-build
@@ -134,16 +134,14 @@ spec:
 
                 if [ "{{git_tag}}" != "" ]
                 then
-                  PACKAGE="patchwork"
                   VERSION="`make -q print-version`-{{git_tag}}"
                 else
-                  PACKAGE="patchwork-nightly"
                   VERSION="`make -q print-version`-nightly-$COMMIT_SHA-$BUILD_ID"
                 fi
-                curl -X PUT --upload-file ./patchwork-fake-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork-fake-signed.sprx
-                curl -X PUT --upload-file ./patchwork-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork-signed.sprx
-                curl -X PUT --upload-file ./patchwork.prx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork.prx
-                curl -X PUT --upload-file ./patchwork-rpcs3-patch.yml --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork-rpcs3-patch.yml
+                curl -X PUT --upload-file ./patchwork-fake-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/$VERSION/patchwork-fake-signed.sprx
+                curl -X PUT --upload-file ./patchwork-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/$VERSION/patchwork-signed.sprx
+                curl -X PUT --upload-file ./patchwork.prx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/$VERSION/patchwork.prx
+                curl -X PUT --upload-file ./patchwork-rpcs3-patch.yml --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/patchwork/$VERSION/patchwork-rpcs3-patch.yml
       
       - name: cleanup
         runAfter:

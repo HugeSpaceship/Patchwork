@@ -1,4 +1,4 @@
-package main
+package rpcs3_patch
 
 import (
 	"fmt"
@@ -22,9 +22,11 @@ type PatchEntry struct {
 	Value   string `yaml:""`
 }
 
+type PatchMap = map[string]map[string]RPCS3Patch
+
 type PatchFile struct {
-	Version float32                          `yaml:"Version"`
-	Patches map[string]map[string]RPCS3Patch `yaml:",inline"`
+	Version float32  `yaml:"Version"`
+	Patches PatchMap `yaml:",inline"`
 }
 
 const CUtf8PatchType = "cutf8"
