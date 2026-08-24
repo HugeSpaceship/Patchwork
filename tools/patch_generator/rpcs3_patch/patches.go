@@ -66,3 +66,16 @@ func MakeCodePatch(hookOffset uint32, patch []byte) []PatchEntry {
 
 	return out
 }
+
+func MakeOverwritePatch(hookOffset uint32, patch []byte) []PatchEntry {
+	if len(patch)%4 != 0 {
+		panic("invalid patch size")
+	}
+	out := make([]PatchEntry, len(patch)/4)
+
+	for i := 0; i < len(patch); i += 4 {
+		out[i/4] = PatchEntry{Type: "be32", Address: hookOffset + uint32(i), Value: fmt.Sprintf("%#08x", patch[i:i+4])}
+	}
+
+	return out
+}

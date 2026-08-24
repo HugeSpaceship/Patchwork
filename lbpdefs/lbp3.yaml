@@ -1,4 +1,3 @@
-symbol_name: LBP3ScriptHook
 offsets:
   user_agent: 0x00D8BF50
   resource_check: 0x001CFC6C
@@ -14,3 +13,11 @@ versions:
 title_ids:
   - BCES02068
 ppu_hash: PPU-4ff9503c80ff356080c96f3828890906073b8e43
+patches:
+  - symbol: LBP3ForceJoinPatch
+    offset: 0x0285fb8
+    length: 28
+    type: overwrite
+  - symbol: LBP3ScriptHook
+    offset: 0x001CFC6C
+    type: hook
