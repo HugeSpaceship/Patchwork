@@ -1,4 +1,20 @@
-package main
+package patch_generator
+
+type PatchType string
+
+const (
+	Hook      PatchType = "hook"
+	Overwrite PatchType = "overwrite"
+)
+
+type Patch struct {
+	// Symbol to search for in the prx that denotes the start of the patch
+	Symbol string
+	// Length of the patch, if left unset it will try to auto-detect by looking for an absolute branch instruction
+	Length uint64
+	// Type determines whether the patch is a hook that should be in its own memory or a set of instruction to overwrite existing code
+	Type PatchType
+}
 
 type Game struct {
 	SymbolName   string             `yaml:"symbol_name"`
@@ -18,6 +34,7 @@ type GameAddressOffsets struct {
 	PresenceURL   uint32 `yaml:"presence_url"`
 	LiveURL       uint32 `yaml:"live_url"`
 	DigestKey     uint32 `yaml:"digest_key"`
+	NetworkKey    uint32 `yaml:"network_key"`
 }
 
 type Server struct {

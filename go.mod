@@ -1,4 +1,4 @@
-module github.com/HugeSpaceship/Patchwork
+module git.valtek.uk/HugeSpaceship/patchwork
 
 go 1.25
 
