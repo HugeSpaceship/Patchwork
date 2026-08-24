@@ -8,6 +8,7 @@
 #include <sysutil/sysutil_msgdialog.h>
 
 #define ERROR_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_DIALOG_TYPE_ERROR | CELL_MSGDIALOG_TYPE_SE_MUTE_OFF | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL);
+#define INFO_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_TYPE_SE_TYPE_NORMAL | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL)
 #define OPTION_DIALOG(text, callback) cellMsgDialogOpen2(CELL_MSGDIALOG_BUTTON_TYPE_YESNO, text, callback, NULL, NULL)
 
 static inline char *TrimEnd(char *str) {
@@ -25,6 +26,7 @@ static inline char *TrimEnd(char *str) {
 
 static inline void println(const char *str) {
     sys_tty_write(SYS_TTYP_PPU_STDOUT, str, strlen(str), NULL);
+    sys_tty_write(SYS_TTYP_PPU_STDOUT, "\n", 1, NULL);
 }
 
 static inline void ReplaceNext(char *str, char target, char c) {
