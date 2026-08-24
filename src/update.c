@@ -3,7 +3,7 @@
 // Header code is ugly, can be cleaned up if we had a heap allocator
 // return 0 if we are up to date, 1 if we downloaded a new update, and 2 for an error
 // TODO: We need some kind of logging that can send stuff to stdout and a log file
-static int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
+int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
     int err = 0;
 
     println("\nstart download update\n");
@@ -87,6 +87,6 @@ static int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
     return err;
 }
 
-static int InstallUpdate(char *path) {
+int InstallUpdate(char *path) {
     return CopyFile(DOWNLOAD_PATH, path);
 }

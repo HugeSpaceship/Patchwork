@@ -19,7 +19,7 @@
 #define HEADER_CLIENT_VERSION "X-Patchwork-Client-Version"
 #define HEADER_SPRX_HASH "X-Patchwork-Sprx-Hash"
 
-static int DownloadUpdate(void *pool, size_t pool_size, char *server_url);
-static int InstallUpdate(char *path);
+int DownloadUpdate(void *pool, size_t pool_size, char *server_url);
+int InstallUpdate(char *path);
 
 #endif //UPDATE_H

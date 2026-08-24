@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/prx.h>
@@ -13,7 +14,6 @@
 #include "hooks/hooks.h"
 #include "hooks/script-block.h"
 #include "toml/helper.h"
-#include "hooks/forcejoin-patch.h"
 #include "tools/util.h"
 #include "tools/fs.h"
 #include "offsets.h"
@@ -45,7 +45,7 @@ typedef struct PatchworkConfigOptions {
     int enable_updates;
 } PatchworkConfigOptions;
 
-int GetHashedJoinKey(unsigned char *hash_buf, char *join_key) {
+int CopyHashedJoinKey(unsigned char *hash_buf, char *join_key) {
     int is_randomized = 0;
 
     if (join_key) {
@@ -103,18 +103,35 @@ int TryUpdate(char *url) {
     return err;
 }
 
+void ApplyGamePatches(GamePatch *patches, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        if (patches[i].offset == 0)
+            break;
+
+        if (patches[i].type == INDIRECT) {
+            void *source = *(void **)patches[i].source;
+            if (source) {
+                println(source);
+                memcpy((void *)patches[i].offset, source, patches[i].size);
+            }
+        }
+        else if (patches[i].source) {
+            memcpy((void *)patches[i].offset, patches[i].source, patches[i].size);
+        }
+    }
+}
+
 int start(size_t args, void *argp) {
     PatchworkLaunchArgs *launch_args = NULL;
-    if (argp) {
+    if (args > 0 && argp) {
         launch_args = argp;
         println("PRX was reloaded");
         INFO_DIALOG("Patchwork has been updated to version " STR(PATCHWORK_VERSION_MAJOR) "." STR(PATCHWORK_VERSION_MINOR));
     }
 
-    if (!launch_args->updated && LoadAllModules() != CELL_OK) {
-        println("Failed to load sysmodules");
-        return SYS_PRX_STOP_FAILED;
-    }
+    LoadAllModules();
+
+    println("Loaded modules");
 
     char toml_buf[312];
     ReadFile(MAIN_CONFIG_PATH, toml_buf, sizeof(toml_buf));
@@ -122,6 +139,8 @@ int start(size_t args, void *argp) {
     Lexer l = MakeLexer(toml_buf);
     TOMLEntry entries[CONFIG_ENTRY_COUNT];
     TOMLReadBuffer(&l, entries, CONFIG_ENTRY_COUNT);
+
+    println("Parsed toml buffer");
 
     PatchworkConfigOptions options;
 
@@ -134,68 +153,80 @@ int start(size_t args, void *argp) {
         {CONFIG_SECTION_UPDATES, "enable_updates", TOML_TYPE_BOOL, &options.enable_updates},
     };
 
+    println("Mapped config entries to data structure");
+
     TOMLApplyEntriesToKeyMap(entries, CONFIG_ENTRY_COUNT, key_map, CONFIG_ENTRY_COUNT);
 
-    if (options.enable_updates && options.update_server_url) {
-        int err = TryUpdate(options.update_server_url);
+    if (launch_args && !launch_args->updated) {
+        if (options.enable_updates && options.update_server_url)
+            TryUpdate(options.update_server_url);
     }
 
-    UnloadAllModules();
+    // Update needed static patch pointers
+    unsigned char join_key_hash[32];
+    int join_key_randomized = 0;
+    if (options.enable_join_key) {
+        join_key_randomized = CopyHashedJoinKey(join_key_hash, options.join_key);
+        NetworkKey = join_key_hash;
+    }
+    println("Setup join key");
 
-    unsigned char xxtea_key[32];
+    if (options.server_url) ServerURL = TrimEnd(options.server_url);
+    if (options.digest_key) ServerDigest = TrimEnd(options.digest_key);
 
-    int join_key_randomized = GetHashedJoinKey(xxtea_key, options.join_key);
+    println("Trimmed server url and digest keys");
+
+    //println(ServerURL);
+    //println(ServerDigest);
 
     // Init patch generics
-    PatchOffsets *offsets;
-
-    void *rescheck_hook = NULL;
-    void *forcejoin_patch = NULL;
-    uint32_t notification_enable_instr = 0;
-    uint32_t forcejoin_patch_len = 0;
-
-    char user_agent_buf[32];
-    strcpy(user_agent_buf, USER_AGENT);
+    GamePatch *patches = NULL;
+    size_t patch_count = 0;
 
     GameNumber game = GetLBPGameNumber();
-
-    if (game == GAME_LBP1) {
-        offsets = &LBP1Offsets;
-        rescheck_hook = LBP1ScriptHook;
-        forcejoin_patch = LBP1ForceJoinPatch;
-        forcejoin_patch_len = LBP1_FORCEJOIN_PATCH_LENGTH;
-    }
-
-    if (game == GAME_LBP2) {
-        offsets = &LBP2Offsets;
-        rescheck_hook = LBP2ScriptHook;
-        forcejoin_patch = LBP2ForceJoinPatch;
-        forcejoin_patch_len = LBP2_FORCEJOIN_PATCH_LENGTH;
-        notification_enable_instr = 0x38000000; // li r0, 0
-    }
-
-    if (game == GAME_LBP3) {
-        offsets = &LBP3Offsets;
-        rescheck_hook = LBP3ScriptHook;
-        forcejoin_patch = LBP3ForceJoinPatch;
-        forcejoin_patch_len = LBP3_FORCEJOIN_PATCH_LENGTH;
-        notification_enable_instr = 0x38600000; // li r3, 0
-    }
-
-    if (game == GAME_LBP3_JP) {
-        offsets = &LBP3JPOffsets;
-        rescheck_hook = LBP3JPScriptHook;
-        forcejoin_patch = LBP3JPForceJoinPatch;
-        forcejoin_patch_len = LBP3_JP_FORCEJOIN_PATCH_LENGTH;
-        // notification_enable_instr = 0x38600000; // TODO: Find this
+    switch (game) {
+        case GAME_LBP1:
+            patches = LBP1Patches;
+            patch_count = sizeof(LBP1Patches) / sizeof(GamePatch);
+            ScriptHookInstruction = RelativeBranch(LBP1ScriptHook, (void *)LBP1_RESOURCE_CHECK_OFFSET);
+            break;
+        case GAME_LBP2:
+            println("Game = LBP2");
+            patches = LBP2Patches;
+            patch_count = sizeof(LBP2Patches) / sizeof(GamePatch);
+            NotificationEnableInstruction = 0x38000000; // li r0, 0
+            ScriptHookInstruction = RelativeBranch(LBP2ScriptHook, (void *)LBP2_RESOURCE_CHECK_OFFSET);
+            println("Set LBP2 static patches");
+            break;
+        case GAME_LBP3:
+            patches = LBP3Patches;
+            patch_count = sizeof(LBP3Patches) / sizeof(GamePatch);
+            NotificationEnableInstruction = 0x38600000; // li r3, 0
+            ScriptHookInstruction = RelativeBranch(LBP3ScriptHook, (void *)LBP3_RESOURCE_CHECK_OFFSET);
+            break;
+        case GAME_LBP3_JP:
+            patches = LBP3JPPatches;
+            patch_count = sizeof(LBP3JPPatches) / sizeof(GamePatch);
+            // NotificationEnableInstruction = 0x38600000; // TODO: Find this
+            ScriptHookInstruction = RelativeBranch(LBP3JPScriptHook, (void *)LBP3_JP_RESOURCE_CHECK_OFFSET);
+            break;
+        default:
+            // TODO: Procedurally build a partial patch list by scanning memory for common values
+            break;
     }
 
     if (!game) {
         ERROR_DIALOG("Failed to detect game, your online is not safe!");
     } else {
+        char user_agent[64];
+
         char game_num_str[4];
-        UIntToStr(game_num_str, 4, game, 10);
-        ReplaceNext(user_agent_buf, 'X', *game_num_str);
+        UIntToStr(game_num_str, sizeof(game_num_str), game, 10);
+
+        strcpy(user_agent, USER_AGENT);
+        ReplaceNext(user_agent, 'X', *game_num_str);
+
+        UserAgent = &user_agent[0];
         
         char *msg_buf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
 
@@ -211,42 +242,12 @@ int start(size_t args, void *argp) {
 
         ReplaceNext(msg_buf, 'X', *game_num_str);
         WriteFile("/dev_hdd0/tmp/wm_request", msg_buf, strlen(msg_buf));
-    }
 
-    size_t url_len = 0;
-    if(options.server_url) {
-        options.server_url = TrimEnd(options.server_url);
-        url_len = strlen(options.server_url) + 1;
-    }
-
-    // Write to the chosen offets
-    if (options.enable_join_key && offsets->network_key)
-        memcpy(offsets->network_key, xxtea_key, LBP_NETWORK_KEY_SIZE);
-    if (offsets->user_agent)
-        memcpy(offsets->user_agent, user_agent_buf, strlen(user_agent_buf) + 1);
-    if (offsets->https_url && options.server_url)
-        memcpy(offsets->https_url, options.server_url, url_len);
-    if (offsets->http_url && options.server_url)
-        memcpy(offsets->http_url, options.server_url, url_len);
-    if (offsets->digest && options.digest_key) {
-        options.digest_key = TrimEnd(options.digest_key);
-        memcpy(offsets->forcejoin_patch, options.digest_key, LBP_DIGEST_LENGTH);
-    }
-    if (offsets->presence_url && options.server_url)
-        memcpy(offsets->presence_url, options.server_url, url_len);
-    if (offsets->live_url && options.server_url)
-        memcpy(offsets->live_url, options.server_url, url_len);
-    if (offsets->notification_enable && notification_enable_instr)
-        memcpy(offsets->notification_enable, &notification_enable_instr, 4);
-    if (offsets->rescheck && rescheck_hook) {
-        uint32_t rescheck_instr = RelativeBranch(rescheck_hook, offsets->rescheck);
-        memcpy(offsets->rescheck, &rescheck_instr, 4);
-    }
-    if (offsets->forcejoin_patch && forcejoin_patch && forcejoin_patch_len) {
-        memcpy(offsets->forcejoin_patch, forcejoin_patch, forcejoin_patch_len);
+        ApplyGamePatches(patches, patch_count);
     }
 
     // Exit
+    UnloadAllModules();
 
     return SYS_PRX_NO_RESIDENT;
 }

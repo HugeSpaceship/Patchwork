@@ -1,6 +1,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include "tools/util.h"
 #include <cell/sysmodule.h>
 
 #define STR1(x)  #x
@@ -19,15 +20,6 @@
 #define SUCCESS_MESSAGE_RANDOM_PW "/popup.ps3?Patchwork%20" STR(PATCHWORK_VERSION_MAJOR)"." STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBPX%0ALobby%20password%20has%20been%20randomized&icon=8&snd=5"
 #define SUCCESS_MESSAGE_WITHOUT_PW "/popup.ps3?Patchwork%20" STR(PATCHWORK_VERSION_MAJOR)"." STR(PATCHWORK_VERSION_MINOR)"%20Loaded%20for%20LBPX%0ALobby%20password%20is%20disabled&icon=8&snd=5"
 
-static const int Modules[] = {
-    CELL_SYSMODULE_FS, 
-    CELL_SYSMODULE_NET,
-    CELL_SYSMODULE_HTTP,
-};
-
-static const size_t ModuleCount = sizeof(Modules) / sizeof(int);
-
-// Not reallyyy used right now, but could be useful later
 typedef enum GameNumber {
     GAME_UNKNOWN = 0,
     GAME_LBP1 = 1,
@@ -36,24 +28,27 @@ typedef enum GameNumber {
     GAME_LBP3_JP = 4,
 } GameNumber;
 
-static int LoadAllModules() {
-    int err;
-    for (int i = 0; i < ModuleCount; i++) {
-        err = cellSysmoduleLoadModule(Modules[i]);
-        if (err != CELL_OK) break;
-    }
+static const int Modules[] = {
+    CELL_SYSMODULE_FS, 
+    CELL_SYSMODULE_NET,
+    CELL_SYSMODULE_HTTP,
+};
 
-    return err;
+static const size_t ModuleCount = sizeof(Modules) / sizeof(int);
+
+// TODO: Proper logging
+static void LoadAllModules() {
+    for (int i = 0; i < ModuleCount; i++) {
+        if (cellSysmoduleLoadModule(Modules[i])) 
+            println("Failed to load module");
+    }
 }
 
-static int UnloadAllModules() {
-    int err;
+static void UnloadAllModules() {
     for (int i = 0; i < ModuleCount; i++) {
-        err = cellSysmoduleUnloadModule(Modules[i]);
-        if (err != CELL_OK) break;
+        if (cellSysmoduleUnloadModule(Modules[i])) 
+            println("Failed to unload module");
     }
-
-    return err;
 }
 
 #endif //GLOBALS_H
