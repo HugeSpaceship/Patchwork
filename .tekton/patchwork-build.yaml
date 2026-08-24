@@ -89,8 +89,8 @@ spec:
                 #!/usr/bin/env bash
                 set -euo pipefail
                 git config --global --add safe.directory $(workspaces.source.path)
-                go get ./patch-generator
-                go build -o patchgen ./patch-generator
+                go get ./tools/patch_generator/cmd/patch_generator
+                go build -o patchgen ./tools/patch_generator/cmd/patch_generator
       - name: patch-generate
         runAfter:
           - go-build
