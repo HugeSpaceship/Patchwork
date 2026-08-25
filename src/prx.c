@@ -2,25 +2,25 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/prx.h>
-#include <sys/process.h>
 #include <sys/sys_time.h>
 #include <sys/memory.h>
 
 #include <cell/hash/libsha256.h>
 #include <cell/sysmodule.h>
-#include <cell/http.h>
-#include <netex/net.h>
 
 #include "hooks/hooks.h"
+#include "hooks/patches.h"
 #include "hooks/script-block.h"
-#include "toml/helper.h"
+
 #include "tools/util.h"
+#include "tools/modules.h"
 #include "tools/fs.h"
 #include "offsets.h"
 #include "update.h"
 #include "globals.h"
 
 #include "toml/toml.h"
+#include "toml/helper.h"
 #include "toml/keymap.h"
 #include "toml/tokenizer.h"
 
@@ -28,12 +28,6 @@ SYS_MODULE_INFO(PatchworkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINO
 SYS_MODULE_START(start);
 
 #define USER_AGENT "PatchworkLBPX " STR(PATCHWORK_VERSION_MAJOR) "." STR(PATCHWORK_VERSION_MINOR)
-
-// For future modifications to launch args, existing ones should remain in the current order
-typedef struct PatchworkLaunchArgs {
-    sys_prx_id_t old_process;
-    int updated;
-} PatchworkLaunchArgs;
 
 typedef struct PatchworkConfigOptions {
     char *server_url;
@@ -65,62 +59,6 @@ int CopyHashedJoinKey(unsigned char *hash_buf, char *join_key) {
     return is_randomized;
 }
 
-int TryUpdate(char *url) {
-    if (sys_net_initialize_network() == 0) {
-        return 2;
-    }
-
-    sys_addr_t http_pool = NULL;
-    sys_memory_allocate(SIZE_64K, SYS_MEMORY_PAGE_SIZE_64K, &http_pool);
-    int err = DownloadUpdate((void *)http_pool, SIZE_64K, url);
-    sys_memory_free(http_pool);
-    sys_net_finalize_network();
-
-    if (err == 1) {
-        InstallUpdate("/dev_hdd0/plugins/patchwork.sprx");
-
-        println("Restarting module");
-
-        int result = 0;
-        sys_prx_id_t my_id = sys_prx_get_my_module_id();
-        sys_prx_id_t new_prx_id = sys_prx_load_module(INSTALL_PATH, 0, NULL);
-
-        PatchworkLaunchArgs args = { my_id, 1 };
-
-        int ret = sys_prx_start_module(new_prx_id, 1, &args, &result, 0, NULL);
-        if (ret < CELL_OK) {
-            ERROR_DIALOG("Failed to restart patchwork");
-        }
-    }
-    if (err == 2) {
-        println("Update failed");
-        ERROR_DIALOG("Failed to update patchwork");
-    }
-    if (err == 1) {
-        println("No patchwork update available");
-    }
-
-    return err;
-}
-
-void ApplyGamePatches(GamePatch *patches, size_t count) {
-    for (size_t i = 0; i < count; i++) {
-        if (patches[i].offset == 0)
-            break;
-
-        if (patches[i].type == INDIRECT) {
-            void *source = *(void **)patches[i].source;
-            if (source) {
-                println(source);
-                memcpy((void *)patches[i].offset, source, patches[i].size);
-            }
-        }
-        else if (patches[i].source) {
-            memcpy((void *)patches[i].offset, patches[i].source, patches[i].size);
-        }
-    }
-}
-
 int start(size_t args, void *argp) {
     PatchworkLaunchArgs *launch_args = NULL;
     if (args > 0 && argp) {
@@ -130,8 +68,6 @@ int start(size_t args, void *argp) {
     }
 
     LoadAllModules();
-
-    println("Loaded modules");
 
     char toml_buf[312];
     ReadFile(MAIN_CONFIG_PATH, toml_buf, sizeof(toml_buf));
@@ -159,7 +95,7 @@ int start(size_t args, void *argp) {
 
     if (launch_args && !launch_args->updated) {
         if (options.enable_updates && options.update_server_url)
-            TryUpdate(options.update_server_url);
+            if (TryUpdateAndInstall(options.update_server_url)) TryRestartModule();
     }
 
     // Update needed static patch pointers
@@ -175,9 +111,6 @@ int start(size_t args, void *argp) {
     if (options.digest_key) ServerDigest = TrimEnd(options.digest_key);
 
     println("Trimmed server url and digest keys");
-
-    //println(ServerURL);
-    //println(ServerDigest);
 
     // Init patch generics
     GamePatch *patches = NULL;

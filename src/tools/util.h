@@ -1,15 +1,21 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include <stdio.h>
+#include <cstdio>
 #include <ctype.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sys/tty.h>
 #include <sysutil/sysutil_msgdialog.h>
+#include <wchar.h>
+
+#include "printf.h"
 
 #define ERROR_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_DIALOG_TYPE_ERROR | CELL_MSGDIALOG_TYPE_SE_MUTE_OFF | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL);
 #define INFO_DIALOG(text) cellMsgDialogOpen2(CELL_MSGDIALOG_TYPE_SE_TYPE_NORMAL | CELL_MSGDIALOG_TYPE_BUTTON_TYPE_OK, text, NULL, NULL, NULL)
 #define OPTION_DIALOG(text, callback) cellMsgDialogOpen2(CELL_MSGDIALOG_BUTTON_TYPE_YESNO, text, callback, NULL, NULL)
+
+#define MAX_PRINTF_BUF 128
 
 static inline char *TrimEnd(char *str) {
     if (str == NULL) return NULL;
@@ -24,8 +30,21 @@ static inline char *TrimEnd(char *str) {
     return str;
 }
 
-static inline void println(const char *str) {
-    sys_tty_write(SYS_TTYP_PPU_STDOUT, str, strlen(str), NULL);
+static inline void print(const char *fmt, ...) {
+    char print_buf[MAX_PRINTF_BUF];
+    va_list args;
+    va_start(args, fmt);
+
+    vsnprintf(print_buf, MAX_PRINTF_BUF, fmt, args);
+    sys_tty_write(SYS_TTYP_PPU_STDOUT, print_buf, strlen(print_buf), NULL);
+}
+
+static inline void println(const char *fmt, ...) {
+    char print_buf[MAX_PRINTF_BUF];
+    va_list args;
+    va_start(args, fmt);
+
+    vsnprintf(print_buf, MAX_PRINTF_BUF, fmt, args);
     sys_tty_write(SYS_TTYP_PPU_STDOUT, "\n", 1, NULL);
 }
 

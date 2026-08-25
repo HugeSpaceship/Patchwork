@@ -73,5 +73,7 @@ You can also use `patchwork_url.txt` and `patchwork_digest.txt` to patch to a cu
 [aldostools](https://github.com/aldostools) For making notifications relatively easy to display,
 and for having a workable example of reading/writing process memory using various syscalls.
 
+[WebMAN-MOD](https://github.com/aldostools/webMAN-MOD) For having a printf library with all the stuff that doesn't work cut out
+
 
 Media Molecule, for making games worth patching.

@@ -1,5 +1,7 @@
 #include "update.h"
 
+#include "tools/fs.h"
+
 // Header code is ugly, can be cleaned up if we had a heap allocator
 // return 0 if we are up to date, 1 if we downloaded a new update, and 2 for an error
 // TODO: We need some kind of logging that can send stuff to stdout and a log file
@@ -89,4 +91,47 @@ int DownloadUpdate(void *pool, size_t pool_size, char *server_url) {
 
 int InstallUpdate(char *path) {
     return CopyFile(DOWNLOAD_PATH, path);
+}
+
+// Perhaps leave network and mempool initialization to caller
+int TryUpdateAndInstall(char *url) {
+    if (sys_net_initialize_network() == 0) {
+        return 2;
+    }
+
+    sys_addr_t http_pool = NULL;
+    sys_memory_allocate(SIZE_64K, SYS_MEMORY_PAGE_SIZE_64K, &http_pool);
+    int err = DownloadUpdate((void *)http_pool, SIZE_64K, url);
+    sys_memory_free(http_pool);
+    sys_net_finalize_network();
+
+    if (err == 1) {
+        InstallUpdate("/dev_hdd0/plugins/patchwork.sprx");
+    }
+    if (err == 2) {
+        println("Update failed");
+        ERROR_DIALOG("Failed to update patchwork");
+    }
+    if (err == 1) {
+        println("No patchwork update available");
+    }
+
+    return err;
+}
+
+int TryRestartModule() {
+    println("Restarting module");
+
+    int result = 0;
+    sys_prx_id_t my_id = sys_prx_get_my_module_id();
+    sys_prx_id_t new_prx_id = sys_prx_load_module(INSTALL_PATH, 0, NULL);
+
+    PatchworkLaunchArgs args = { my_id, 1 };
+
+    int ret = sys_prx_start_module(new_prx_id, 1, &args, &result, 0, NULL);
+    if (ret < CELL_OK) {
+        ERROR_DIALOG("Failed to restart patchwork");
+    }
+
+    return ret;
 }
