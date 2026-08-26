@@ -24,13 +24,48 @@ func MakePatches(elfFile *elf.File, game patch_generator.Game, servers []patch_g
 	}
 
 	var patchEntries []PatchEntry
-	for _, sym := range syms {
-		if sym.Name == game.SymbolName {
-			gameHook, err := patch_generator.GetHook(elfFile.Section(".text"), sym.Value)
-			if err != nil {
-				panic(err)
+	for _, patch := range game.Patches {
+		for _, sym := range syms {
+			if sym.Name == patch.Symbol {
+				section := elfFile.Section(".text")
+				if section == nil {
+					panic("section not found")
+				}
+				switch patch.Type {
+				case patch_generator.Overwrite:
+					if patch.Length == 0 {
+						panic("patch length cannot be zero for an overwrite")
+					}
+					gameHook := make([]byte, patch.Length*4)
+					n, err := section.ReadAt(gameHook, int64(sym.Value))
+					if err != nil {
+						panic(err)
+					}
+					if n != len(gameHook) {
+						panic("invalid patch length")
+					}
+					patchEntries = append(patchEntries, MakeOverwritePatch(patch.Offset, gameHook)...)
+				case patch_generator.Hook:
+					var gameHook []byte
+					if patch.Length != 0 {
+						gameHook = make([]byte, patch.Length)
+						n, err := section.ReadAt(gameHook, int64(patch.Offset))
+						if err != nil {
+							panic(err)
+						}
+						if n != len(gameHook) {
+							panic("invalid patch length")
+						}
+					} else {
+						gameHook, err = patch_generator.GetHook(elfFile.Section(".text"), sym.Value)
+						if err != nil {
+							panic(err)
+						}
+					}
+					patchEntries = append(patchEntries, MakeCodePatch(patch.Offset, gameHook)...)
+				}
+
 			}
-			patchEntries = MakeCodePatch(game.Offsets.ResourceCheck, gameHook)
 		}
 	}
 

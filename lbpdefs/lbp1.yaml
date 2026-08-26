@@ -1,7 +1,5 @@
-symbol_name: LBP1ScriptHook
 offsets:
   user_agent: 0x0079FDA0
-  resource_check: 0x00081BC8
   http_url: 0x00767CF8
   https_url: 0x00767C40
   digest_key: 0x0079FBC0
@@ -15,3 +13,11 @@ title_ids:
   - BCES00611
   - BCUS98148
 ppu_hash: PPU-545c1abbf1c562d60fca7435401f020beab76b53
+patches:
+  - symbol: LBP1ForceJoinPatch
+    offset: 0x03ab70c
+    length: 16
+    type: overwrite
+  - symbol: LBP1ScriptHook
+    offset: 0x00081BC8
+    type: hook
