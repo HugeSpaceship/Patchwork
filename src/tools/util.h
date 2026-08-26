@@ -22,8 +22,8 @@ char *TrimEnd(char *str);
 
 void ReplaceNext(char *str, char target, char c);
 
-void print(const char *fmt, ...);
-void println(const char *fmt, ...);
+void Print(const char *fmt, ...);
+void PrintLn(const char *fmt, ...);
 
 void InitLogger();
 void DestroyLogger();
