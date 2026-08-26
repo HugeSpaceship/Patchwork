@@ -14,27 +14,28 @@ type Patch struct {
 	Length uint64
 	// Type determines whether the patch is a hook that should be in its own memory or a set of instruction to overwrite existing code
 	Type PatchType
+	// Offset is the offset in the game to start patching from, in virtual memory
+	Offset uint32
 }
 
 type Game struct {
-	SymbolName   string             `yaml:"symbol_name"`
 	Offsets      GameAddressOffsets `yaml:"offsets"`
 	UserAgent    string             `yaml:"user_agent"`
 	Name         string             `yaml:"name"`
 	GameVersions []string           `yaml:"versions"`
 	TitleIDs     []string           `yaml:"title_ids"`
 	PPUHash      string             `yaml:"ppu_hash"`
+	Patches      []Patch            `yaml:"patches"`
 }
 
 type GameAddressOffsets struct {
-	UserAgent     uint32 `yaml:"user_agent"`
-	ResourceCheck uint32 `yaml:"resource_check"`
-	HttpURL       uint32 `yaml:"http_url"`
-	HttpsURL      uint32 `yaml:"https_url"`
-	PresenceURL   uint32 `yaml:"presence_url"`
-	LiveURL       uint32 `yaml:"live_url"`
-	DigestKey     uint32 `yaml:"digest_key"`
-	NetworkKey    uint32 `yaml:"network_key"`
+	UserAgent   uint32 `yaml:"user_agent"`
+	HttpURL     uint32 `yaml:"http_url"`
+	HttpsURL    uint32 `yaml:"https_url"`
+	PresenceURL uint32 `yaml:"presence_url"`
+	LiveURL     uint32 `yaml:"live_url"`
+	DigestKey   uint32 `yaml:"digest_key"`
+	NetworkKey  uint32 `yaml:"network_key"`
 }
 
 type Server struct {
