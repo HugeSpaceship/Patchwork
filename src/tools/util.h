@@ -1,13 +1,12 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include <cstdio>
 #include <ctype.h>
 #include <stdarg.h>
 #include <string.h>
 #include <sys/tty.h>
 #include <sysutil/sysutil_msgdialog.h>
-#include <wchar.h>
+#include <cell/cell_fs.h>
 
 #include "printf.h"
 
@@ -17,48 +16,18 @@
 
 #define MAX_PRINTF_BUF 128
 
-static inline char *TrimEnd(char *str) {
-    if (str == NULL) return NULL;
-    if (*str == '\0') return str;
+#define DEFAULT_LOG_PATH "/dev_hdd0/plugins/patchwork/patchwork.log"
 
-    char *end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) end--;
+char *TrimEnd(char *str);
 
-    // Write new null terminator
-    *(end + 1) = '\0';
+void ReplaceNext(char *str, char target, char c);
 
-    return str;
-}
+void print(const char *fmt, ...);
+void println(const char *fmt, ...);
 
-static inline void print(const char *fmt, ...) {
-    char print_buf[MAX_PRINTF_BUF];
-    va_list args;
-    va_start(args, fmt);
-
-    vsnprintf(print_buf, MAX_PRINTF_BUF, fmt, args);
-    sys_tty_write(SYS_TTYP_PPU_STDOUT, print_buf, strlen(print_buf), NULL);
-}
-
-static inline void println(const char *fmt, ...) {
-    char print_buf[MAX_PRINTF_BUF];
-    va_list args;
-    va_start(args, fmt);
-
-    vsnprintf(print_buf, MAX_PRINTF_BUF, fmt, args);
-    sys_tty_write(SYS_TTYP_PPU_STDOUT, "\n", 1, NULL);
-}
-
-static inline void ReplaceNext(char *str, char target, char c) {
-    size_t i = 0;
-    while (str[i] != target) {
-        if (str[i] == '\0') {
-            return;
-        }
-        
-        i++;
-    }
-
-    str[i] = c;
-}
+void InitLogger();
+void DestroyLogger();
+void Log(const char *fmt, ...);
+void LogLn(const char *fmt, ...);
 
 #endif // UTIL_H

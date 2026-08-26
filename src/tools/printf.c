@@ -61,15 +61,15 @@
  *
  * 2007-07-23 Holger Weiss <holger@jhweiss.de> for Mutt 1.5.13:
  *
- * 	C99 compliant snprintf(3) and vsnprintf(3) functions return the number
+ * 	C99 compliant snprintf(3) and Vsnprintf(3) functions return the number
  * 	of characters that would have been written to a sufficiently sized
  * 	buffer (excluding the '\0').  The original code simply returned the
  * 	length of the resulting output string, so that's been fixed.
  *
  * 1998-03-05 Michael Elkins <me@mutt.org> for Mutt 0.90.8:
  *
- * 	The original code assumed that both snprintf(3) and vsnprintf(3) were
- * 	missing.  Some systems only have snprintf(3) but not vsnprintf(3), so
+ * 	The original code assumed that both snprintf(3) and Vsnprintf(3) were
+ * 	missing.  Some systems only have snprintf(3) but not Vsnprintf(3), so
  * 	the code is now broken down under HAVE_SNPRINTF and HAVE_VSNPRINTF.
  *
  * 1998-01-27 Thomas Roessler <roessler@does-not-exist.org> for Mutt 0.89i:
@@ -276,7 +276,7 @@ static void printsep(char *, size_t *, size_t);
 static int getnumsep(int);
 static int convert(UINTMAX_T, char *, size_t, int, int);
 
-int vsnprintf(char *str, size_t size, const char *format, va_list args)
+int Vsnprintf(char *str, size_t size, const char *format, va_list args)
 {
 	if (!format)
 		return 0;
@@ -790,7 +790,7 @@ convert(UINTMAX_T value, char *buf, size_t size, int base, int caps)
 /*
 int vsprintf(char *buf, const char *fmt, va_list args)
 {
-	return vsnprintf(buf, INT_MAX, fmt, args);
+	return Vsnprintf(buf, INT_MAX, fmt, args);
 }
 */
 
@@ -806,12 +806,12 @@ int sprintf(char *buffer, const char *fmt, ...)
 }
 */
 
-int snprintf(char *buffer, size_t len, const char *fmt, ...)
+int Snprintf(char *buffer, size_t len, const char *fmt, ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
-	int i = vsnprintf(buffer, len, fmt, args);
+	int i = Vsnprintf(buffer, len, fmt, args);
 	va_end(args);
 	return i;
 }
@@ -824,7 +824,7 @@ char *strfmt(const char *fmt, ...)
 	va_list args;
 
 	va_start(args, fmt);
-	vsnprintf(strfmt_buf, sizeof(strfmt_buf), fmt, args);
+	Vsnprintf(strfmt_buf, sizeof(strfmt_buf), fmt, args);
 	va_end(args);
 
 	return strfmt_buf;
@@ -846,7 +846,7 @@ int printf(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 	int i, written = 0;
 
 	va_start(args, fmt);
-	i = vsnprintf(strBuf, PRINTF_MAX, fmt, args);
+	i = Vsnprintf(strBuf, PRINTF_MAX, fmt, args);
 	va_end(args);
 
 
@@ -877,7 +877,7 @@ int printf(const char *fmt, ...)
 	int i, written = 0;
 
 	va_start(args, fmt);
-	i = vsnprintf(strBuf, PRINTF_MAX, fmt, args);
+	i = Vsnprintf(strBuf, PRINTF_MAX, fmt, args);
 	va_end(args);
 	ttyWrite(1, strBuf, i, &written);
 	return written;

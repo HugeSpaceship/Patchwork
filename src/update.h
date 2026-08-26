@@ -9,6 +9,7 @@
 #include <netex/net.h>
 
 #include "http/http.h"
+#include "tools/fs.h"
 #include "globals.h"
 #include "toml/helper.h"
 
