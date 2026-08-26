@@ -142,7 +142,7 @@ int start(size_t args, void *argp) {
         case GAME_LBP3_JP:
             patches = LBP3JPPatches;
             patch_count = LBP3JPPatchesCount;
-            // NotificationEnableInstruction = 0x38600000; // TODO: Find this
+            NotificationEnableInstruction = 0x38600000;
             ScriptHookInstruction = RelativeBranch(LBP3JPScriptHook, (void *)LBP3_JP_RESOURCE_CHECK_OFFSET);
             break;
         default:
@@ -160,7 +160,7 @@ int start(size_t args, void *argp) {
 
         char user_agent[64];
         Snprintf(user_agent, sizeof(user_agent), 
-            "Patchwork LBP%c %s.%s %s", *game_num_str, MAJOR_STR, MINOR_STR, 
+            "PatchworkLBP%c %s.%s %s", *game_num_str, MAJOR_STR, MINOR_STR, 
             options.enable_join_key ? "KEY" : "NOKEY");
 
         UserAgent = user_agent;

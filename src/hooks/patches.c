@@ -58,9 +58,9 @@ GamePatch LBP3JPPatches[] = {
 };
 
 size_t LBP1PatchesCount = sizeof(LBP1Patches) / sizeof(GamePatch);
-size_t LBP2PatchesCount = sizeof(LBP1Patches) / sizeof(GamePatch);
-size_t LBP3PatchesCount = sizeof(LBP1Patches) / sizeof(GamePatch);
-size_t LBP3JPPatchesCount = sizeof(LBP1Patches) / sizeof(GamePatch);
+size_t LBP2PatchesCount = sizeof(LBP2Patches) / sizeof(GamePatch);
+size_t LBP3PatchesCount = sizeof(LBP3Patches) / sizeof(GamePatch);
+size_t LBP3JPPatchesCount = sizeof(LBP3JPPatches) / sizeof(GamePatch);
 
 void ApplyGamePatches(GamePatch *patches, size_t count) {
     for (size_t i = 0; i < count; i++) {

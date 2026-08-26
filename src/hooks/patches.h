@@ -22,7 +22,6 @@ typedef struct GamePatch {
     PatchType type;
 } GamePatch;
 
-// Initialize any static memory to overwrite later
 extern char *ServerURL;
 extern char *ServerDigest;
 extern char *UserAgent;
