@@ -161,7 +161,7 @@ int start(size_t args, void *argp) {
         char user_agent[64];
         Snprintf(user_agent, sizeof(user_agent), 
             "PatchworkLBP%c %s.%s %s", *game_num_str, MAJOR_STR, MINOR_STR, 
-            options.enable_join_key ? "WK" : "NK"); // With key / No key
+            options.enable_join_key ? "" : "NK"); // NK = No Key, otherwise empty
 
         UserAgent = user_agent;
 
