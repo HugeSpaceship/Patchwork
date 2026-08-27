@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "../tools/util.h"
+
 // Opcode for the branch instruction
 #define OPCODE_B 0x48000000
 
