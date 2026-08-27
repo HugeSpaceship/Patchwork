@@ -132,7 +132,7 @@ spec:
                 apk add make curl
 
                 PACKAGE="patchwork"
-                VERSION="`make -q print-version`-{{git_tag}}"
+                VERSION="{{git_tag}}"
                 curl -X PUT --upload-file ./patchwork-fake-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork-fake-signed.sprx
                 curl -X PUT --upload-file ./patchwork-signed.sprx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork-signed.sprx
                 curl -X PUT --upload-file ./patchwork.prx --user tekton:`cat $(workspaces.forgejo-token.path)/token` https://git.valtek.uk/api/packages/hugespaceship/generic/$PACKAGE/$VERSION/patchwork.prx
