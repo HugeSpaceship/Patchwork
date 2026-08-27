@@ -1,7 +1,6 @@
 #ifndef FS_H
 #define FS_H
 
-#include <cell/cell_fs.h>
 #include "util.h"
 
 int ReadFile(const char *path, char *buf, int buf_size);

@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include "memory.h"
 
 int sys_dbg_write_process_memory(sys_pid_t pid, const void *destination, const void *source, size_t size)

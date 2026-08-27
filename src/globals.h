@@ -1,9 +1,6 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include "tools/util.h"
-#include <cell/sysmodule.h>
-
 #define STR1(x)  #x
 #define STR(x)  STR1(x)
 
@@ -27,28 +24,5 @@ typedef enum GameNumber {
     GAME_LBP3 = 3,
     GAME_LBP3_JP = 4,
 } GameNumber;
-
-static const int Modules[] = {
-    CELL_SYSMODULE_FS, 
-    CELL_SYSMODULE_NET,
-    CELL_SYSMODULE_HTTP,
-};
-
-static const size_t ModuleCount = sizeof(Modules) / sizeof(int);
-
-// TODO: Proper logging
-static void LoadAllModules() {
-    for (int i = 0; i < ModuleCount; i++) {
-        if (cellSysmoduleLoadModule(Modules[i])) 
-            println("Failed to load module");
-    }
-}
-
-static void UnloadAllModules() {
-    for (int i = 0; i < ModuleCount; i++) {
-        if (cellSysmoduleUnloadModule(Modules[i])) 
-            println("Failed to unload module");
-    }
-}
 
 #endif //GLOBALS_H

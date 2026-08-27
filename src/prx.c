@@ -2,19 +2,20 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/prx.h>
-#include <sys/process.h>
 #include <sys/sys_time.h>
 #include <sys/memory.h>
 
 #include <cell/hash/libsha256.h>
 #include <cell/sysmodule.h>
-#include <cell/http.h>
-#include <netex/net.h>
 
 #include "hooks/hooks.h"
+#include "hooks/patches.h"
 #include "hooks/script-block.h"
+
 #include "toml/helper.h"
+#include "tools/printf.h"
 #include "tools/util.h"
+#include "tools/modules.h"
 #include "tools/fs.h"
 #include "offsets.h"
 #include "update.h"
@@ -26,14 +27,6 @@
 
 SYS_MODULE_INFO(PatchworkLBP, 0, PATCHWORK_VERSION_MAJOR, PATCHWORK_VERSION_MINOR);
 SYS_MODULE_START(start);
-
-#define USER_AGENT "PatchworkLBPX " STR(PATCHWORK_VERSION_MAJOR) "." STR(PATCHWORK_VERSION_MINOR)
-
-// For future modifications to launch args, existing ones should remain in the current order
-typedef struct PatchworkLaunchArgs {
-    sys_prx_id_t old_process;
-    int updated;
-} PatchworkLaunchArgs;
 
 typedef struct PatchworkConfigOptions {
     char *server_url;
@@ -65,73 +58,16 @@ int CopyHashedJoinKey(unsigned char *hash_buf, char *join_key) {
     return is_randomized;
 }
 
-int TryUpdate(char *url) {
-    if (sys_net_initialize_network() == 0) {
-        return 2;
-    }
-
-    sys_addr_t http_pool = NULL;
-    sys_memory_allocate(SIZE_64K, SYS_MEMORY_PAGE_SIZE_64K, &http_pool);
-    int err = DownloadUpdate((void *)http_pool, SIZE_64K, url);
-    sys_memory_free(http_pool);
-    sys_net_finalize_network();
-
-    if (err == 1) {
-        InstallUpdate("/dev_hdd0/plugins/patchwork.sprx");
-
-        println("Restarting module");
-
-        int result = 0;
-        sys_prx_id_t my_id = sys_prx_get_my_module_id();
-        sys_prx_id_t new_prx_id = sys_prx_load_module(INSTALL_PATH, 0, NULL);
-
-        PatchworkLaunchArgs args = { my_id, 1 };
-
-        int ret = sys_prx_start_module(new_prx_id, 1, &args, &result, 0, NULL);
-        if (ret < CELL_OK) {
-            ERROR_DIALOG("Failed to restart patchwork");
-        }
-    }
-    if (err == 2) {
-        println("Update failed");
-        ERROR_DIALOG("Failed to update patchwork");
-    }
-    if (err == 1) {
-        println("No patchwork update available");
-    }
-
-    return err;
-}
-
-void ApplyGamePatches(GamePatch *patches, size_t count) {
-    for (size_t i = 0; i < count; i++) {
-        if (patches[i].offset == 0)
-            break;
-
-        if (patches[i].type == INDIRECT) {
-            void *source = *(void **)patches[i].source;
-            if (source) {
-                println(source);
-                memcpy((void *)patches[i].offset, source, patches[i].size);
-            }
-        }
-        else if (patches[i].source) {
-            memcpy((void *)patches[i].offset, patches[i].source, patches[i].size);
-        }
-    }
-}
-
 int start(size_t args, void *argp) {
     PatchworkLaunchArgs *launch_args = NULL;
     if (args > 0 && argp) {
         launch_args = argp;
-        println("PRX was reloaded");
+        LogLn("PRX was reloaded from PRX ID: %d", launch_args->old_process);
         INFO_DIALOG("Patchwork has been updated to version " STR(PATCHWORK_VERSION_MAJOR) "." STR(PATCHWORK_VERSION_MINOR));
     }
 
     LoadAllModules();
-
-    println("Loaded modules");
+    InitLogger();
 
     char toml_buf[312];
     ReadFile(MAIN_CONFIG_PATH, toml_buf, sizeof(toml_buf));
@@ -140,7 +76,7 @@ int start(size_t args, void *argp) {
     TOMLEntry entries[CONFIG_ENTRY_COUNT];
     TOMLReadBuffer(&l, entries, CONFIG_ENTRY_COUNT);
 
-    println("Parsed toml buffer");
+    LogLn("Parsed config file buffer");
 
     PatchworkConfigOptions options;
 
@@ -153,13 +89,13 @@ int start(size_t args, void *argp) {
         {CONFIG_SECTION_UPDATES, "enable_updates", TOML_TYPE_BOOL, &options.enable_updates},
     };
 
-    println("Mapped config entries to data structure");
+    LogLn("Mapped config entries to patch options");
 
     TOMLApplyEntriesToKeyMap(entries, CONFIG_ENTRY_COUNT, key_map, CONFIG_ENTRY_COUNT);
 
     if (launch_args && !launch_args->updated) {
         if (options.enable_updates && options.update_server_url)
-            TryUpdate(options.update_server_url);
+            if (TryUpdateAndInstall(options.update_server_url)) TryRestartModule();
     }
 
     // Update needed static patch pointers
@@ -168,16 +104,17 @@ int start(size_t args, void *argp) {
     if (options.enable_join_key) {
         join_key_randomized = CopyHashedJoinKey(join_key_hash, options.join_key);
         NetworkKey = join_key_hash;
+        LogLn("Setup join key");
     }
-    println("Setup join key");
 
-    if (options.server_url) ServerURL = TrimEnd(options.server_url);
-    if (options.digest_key) ServerDigest = TrimEnd(options.digest_key);
-
-    println("Trimmed server url and digest keys");
-
-    //println(ServerURL);
-    //println(ServerDigest);
+    if (options.server_url) { 
+        ServerURL = TrimEnd(options.server_url);
+        LogLn("Server URL: %s", ServerURL);
+    };
+    if (options.digest_key) {
+        ServerDigest = TrimEnd(options.digest_key);
+        LogLn("Digest Key: %s", ServerDigest);
+    }
 
     // Init patch generics
     GamePatch *patches = NULL;
@@ -187,27 +124,25 @@ int start(size_t args, void *argp) {
     switch (game) {
         case GAME_LBP1:
             patches = LBP1Patches;
-            patch_count = sizeof(LBP1Patches) / sizeof(GamePatch);
+            patch_count = LBP1PatchesCount;
             ScriptHookInstruction = RelativeBranch(LBP1ScriptHook, (void *)LBP1_RESOURCE_CHECK_OFFSET);
             break;
         case GAME_LBP2:
-            println("Game = LBP2");
             patches = LBP2Patches;
-            patch_count = sizeof(LBP2Patches) / sizeof(GamePatch);
+            patch_count = LBP2PatchesCount;
             NotificationEnableInstruction = 0x38000000; // li r0, 0
             ScriptHookInstruction = RelativeBranch(LBP2ScriptHook, (void *)LBP2_RESOURCE_CHECK_OFFSET);
-            println("Set LBP2 static patches");
             break;
         case GAME_LBP3:
             patches = LBP3Patches;
-            patch_count = sizeof(LBP3Patches) / sizeof(GamePatch);
+            patch_count = LBP3PatchesCount;
             NotificationEnableInstruction = 0x38600000; // li r3, 0
             ScriptHookInstruction = RelativeBranch(LBP3ScriptHook, (void *)LBP3_RESOURCE_CHECK_OFFSET);
             break;
         case GAME_LBP3_JP:
             patches = LBP3JPPatches;
-            patch_count = sizeof(LBP3JPPatches) / sizeof(GamePatch);
-            // NotificationEnableInstruction = 0x38600000; // TODO: Find this
+            patch_count = LBP3JPPatchesCount;
+            NotificationEnableInstruction = 0x38600000;
             ScriptHookInstruction = RelativeBranch(LBP3JPScriptHook, (void *)LBP3_JP_RESOURCE_CHECK_OFFSET);
             break;
         default:
@@ -218,15 +153,19 @@ int start(size_t args, void *argp) {
     if (!game) {
         ERROR_DIALOG("Failed to detect game, your online is not safe!");
     } else {
-        char user_agent[64];
-
         char game_num_str[4];
-        UIntToStr(game_num_str, sizeof(game_num_str), game, 10);
+        UIntToStr(game_num_str, 4, game, 10);
 
-        strcpy(user_agent, USER_AGENT);
-        ReplaceNext(user_agent, 'X', *game_num_str);
+        LogLn("Selected patches for LBP%s", game_num_str); // LBP4 is in fact possible
 
-        UserAgent = &user_agent[0];
+        char user_agent[64];
+        Snprintf(user_agent, sizeof(user_agent), 
+            "PatchworkLBP%c %s.%s %s", *game_num_str, MAJOR_STR, MINOR_STR, 
+            options.enable_join_key ? "" : "NK"); // NK = No Key, otherwise empty
+
+        UserAgent = user_agent;
+
+        LogLn("User agent: %s", UserAgent);
         
         char *msg_buf = __builtin_alloca(sizeof(SUCCESS_MESSAGE_WITHOUT_PW));
 
@@ -247,6 +186,7 @@ int start(size_t args, void *argp) {
     }
 
     // Exit
+    DestroyLogger();
     UnloadAllModules();
 
     return SYS_PRX_NO_RESIDENT;
