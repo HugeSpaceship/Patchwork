@@ -82,9 +82,9 @@ void ApplyGamePatches(GamePatch *patches, size_t count) {
 }
 
 GameNumber GetLBPGameNumber() {
-    if (((char *)LBP1_USER_AGENT_OFFSET)[15] == '$')return GAME_LBP1;
+    if (((char *)LBP1_USER_AGENT_OFFSET)[15] == '$') return GAME_LBP1;
     if (((char *)LBP2_USER_AGENT_OFFSET)[18] == '2') return GAME_LBP2;
-    if (((char *)LBP3_USER_AGENT_OFFSET)[18] == '3') return GAME_LBP3;
-    if (((char *)LBP3_JP_USER_AGENT_OFFSET)[18] == '3') return GAME_LBP3_JP;
+    if (((char *)LBP3_USER_AGENT_OFFSET)[18] == '2') return GAME_LBP3;
+    if (((char *)LBP3_JP_USER_AGENT_OFFSET)[18] == '2') return GAME_LBP3_JP;
     return GAME_UNKNOWN;
 }
