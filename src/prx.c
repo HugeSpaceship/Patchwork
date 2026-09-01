@@ -70,32 +70,36 @@ int start(size_t args, void *argp) {
     InitLogger();
 
     char toml_buf[312];
-    ReadFile(MAIN_CONFIG_PATH, toml_buf, sizeof(toml_buf));
+    PatchworkConfigOptions options = {};
 
-    Lexer l = MakeLexer(toml_buf);
-    TOMLEntry entries[CONFIG_ENTRY_COUNT];
-    TOMLReadBuffer(&l, entries, CONFIG_ENTRY_COUNT);
+    int success = ReadFile(MAIN_CONFIG_PATH, toml_buf, sizeof(toml_buf));
+    if (success) {
+        Lexer l = MakeLexer(toml_buf);
+        TOMLEntry entries[CONFIG_ENTRY_COUNT];
+        TOMLReadBuffer(&l, entries, CONFIG_ENTRY_COUNT);
 
-    LogLn("Parsed config file buffer");
+        LogLn("Parsed config file buffer");
 
-    PatchworkConfigOptions options;
+        TOMLKeyMap key_map[] = {
+            {CONFIG_SECTION_MAIN, "server_url", TOML_TYPE_STRING, &options.server_url},
+            {CONFIG_SECTION_MAIN, "join_key", TOML_TYPE_STRING, &options.join_key},
+            {CONFIG_SECTION_MAIN, "digest_key", TOML_TYPE_STRING, &options.digest_key},
+            {CONFIG_SECTION_MAIN, "enable_join_key", TOML_TYPE_BOOL, &options.enable_join_key},
+            {CONFIG_SECTION_UPDATES, "update_server", TOML_TYPE_STRING, &options.update_server_url},
+            {CONFIG_SECTION_UPDATES, "enable_updates", TOML_TYPE_BOOL, &options.enable_updates},
+        };
 
-    TOMLKeyMap key_map[] = {
-        {CONFIG_SECTION_MAIN, "server_url", TOML_TYPE_STRING, &options.server_url},
-        {CONFIG_SECTION_MAIN, "join_key", TOML_TYPE_STRING, &options.join_key},
-        {CONFIG_SECTION_MAIN, "digest_key", TOML_TYPE_STRING, &options.digest_key},
-        {CONFIG_SECTION_MAIN, "enable_join_key", TOML_TYPE_BOOL, &options.enable_join_key},
-        {CONFIG_SECTION_UPDATES, "update_server", TOML_TYPE_STRING, &options.update_server_url},
-        {CONFIG_SECTION_UPDATES, "enable_updates", TOML_TYPE_BOOL, &options.enable_updates},
-    };
+        TOMLApplyEntriesToKeyMap(entries, CONFIG_ENTRY_COUNT, key_map, CONFIG_ENTRY_COUNT);
 
-    LogLn("Mapped config entries to patch options");
+        LogLn("Mapped config entries to patch options");
 
-    TOMLApplyEntriesToKeyMap(entries, CONFIG_ENTRY_COUNT, key_map, CONFIG_ENTRY_COUNT);
-
-    if (launch_args && !launch_args->updated) {
-        if (options.enable_updates && options.update_server_url)
-            if (TryUpdateAndInstall(options.update_server_url)) TryRestartModule();
+        if (launch_args && !launch_args->updated)
+            if (options.enable_updates && options.update_server_url)
+                if (TryUpdateAndInstall(options.update_server_url)) 
+                    TryRestartModule();
+    } else {
+        LogLn("Failed to read config file, options are unset");
+        ERROR_DIALOG("Failed to read the Patchwork configuration!");
     }
 
     // Update needed static patch pointers
